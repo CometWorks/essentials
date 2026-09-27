@@ -16,6 +16,7 @@ namespace Shared.Config;
 [Section("motd-main", "motd", "Messages")]
 [Section("motd-url", "motd", "URL")]
 [Section("cleanup-bags", "cleanup", "Backpacks")]
+[Section("cleanup-notices", "cleanup", "Grid Look Notifications")]
 [Section("pcu-core", "pcu", "Limits")]
 [Section("shipfixer-core", "shipfixer", "Core")]
 [Section("autocmd-list", "autocmd", "Auto Commands")]
@@ -66,6 +67,9 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
     [IntOption(-1, int.MaxValue, "Maximum empty backpacks per player. Set -1 for no limit.", Parent = "cleanup-bags")]
     public int BackpackLimit { get; set => SetField(ref field, value); } = 3;
 
+    [StructOption("Notify a grid's BigOwners when they look at a grid matching cleanup conditions. Empty by default.", Parent = "cleanup-notices")]
+    public List<CleanupLookNotice> CleanupLookNotices { get; set => SetField(ref field, value); } = new();
+
     [BoolOption("Use BlockLimits Plugin when validating PCU transfer limits. Ignored when BlockLimits is detected and enabled.", Parent = "pcu-core")]
     public bool UseBlockLimitsPlugin { get; set => SetField(ref field, value); }
 
@@ -109,4 +113,13 @@ public struct InfoCommand
 {
     [StructMember("Command name shown by !ess info list."), StructCaption]
     public string Command { get; set; }
+}
+
+public struct CleanupLookNotice
+{
+    [StructMember("!ess cleanup condition arguments without the command prefix. Quote values with spaces; include haspilot to match occupied grids."), StructCaption]
+    public string Conditions { get; set; }
+
+    [StructMember("HUD notification shown to BigOwners looking at a matching grid. Use {GridName} for the grid's name.")]
+    public string Message { get; set; }
 }

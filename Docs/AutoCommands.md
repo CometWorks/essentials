@@ -68,7 +68,8 @@ Each step has these fields:
 |---|---|
 | **Action** | What the step does (see table below). |
 | **Command** | The command line (for `Command`), the message text (for `Announce`/`Notify`), or the auto-command name (for `RunAuto`). |
-| **Color** | Optional colour for `Announce`/`Notify` — `R G B` (0–255) or a name like `Red`, `Cyan`, `Yellow`. |
+| **Color** | Optional colour for `Announce` — `R G B` (0–255) or a name like `Red`, `Cyan`, `Yellow`. Existing `Notify` steps use `Red`, `Green`, or `Blue` from this field when `NotifyFont` is `Default`. |
+| **NotifyFont** | HUD font for `Notify`: `White`, `Red`, `Green`, `Blue`, or `DarkBlue`. `Default` keeps existing Color behavior, falling back to White. |
 | **NotifyDurationMs** | `Notify` on-screen time in milliseconds (0 = 5000). |
 | **ShellScript** | Optional shell command/script run **before** the action. |
 | **ShellTimeoutSeconds** | Max seconds to wait for the shell script (0 = wait indefinitely). |
@@ -78,7 +79,7 @@ Each step has these fields:
 |---|---|
 | **Command** | Runs the `Command` line as a server `!ess …` command (see the caveat below). |
 | **Announce** | Sends `Command` to every player's chat, in `Color` if set. |
-| **Notify** | Shows `Command` as a HUD notification to all players for `NotifyDurationMs`. |
+| **Notify** | Shows `Command` as a HUD notification to all players for `NotifyDurationMs`, using `NotifyFont`. |
 | **Save** | Saves the world (no restart). |
 | **ReloadConfig** | Saves, then reloads the dedicated-server config (MOTD etc.). |
 | **Restart** | Saves and restarts the server process **immediately**. |
@@ -188,7 +189,7 @@ DayOfWeek = All
 Steps:
   Action=Announce Command="Server restarts in 5 minutes" Color="255 200 0" Delay=00:04:00
   Action=Announce Command="Server restarts in 1 minute"  Color="255 120 0" Delay=00:00:50
-  Action=Notify   Command="Saving and restarting now"    NotifyDurationMs=10000 Delay=00:00:10
+  Action=Notify   Command="Saving and restarting now"    NotifyFont=Red NotifyDurationMs=10000 Delay=00:00:10
   Action=Restart
 ```
 

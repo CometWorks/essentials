@@ -353,7 +353,7 @@ public sealed class AutoCommandExecutor
                 return;
 
             case StepAction.Notify:
-                Notify(step.Command, step.NotifyDurationMs, step.Color);
+                Notify(step.Command, step.NotifyDurationMs, step.NotifyFont, step.Color);
                 return;
 
             case StepAction.Save:
@@ -404,13 +404,13 @@ public sealed class AutoCommandExecutor
             MyVisualScriptLogicProvider.SendChatMessage(text, "Server", 0L, MyFontEnum.White);
     }
 
-    private static void Notify(string text, int durationMs, string colorText)
+    private static void Notify(string text, int durationMs, NotificationFont font, string legacyColorText)
     {
         if (string.IsNullOrEmpty(text))
             return;
 
         int duration = durationMs > 0 ? durationMs : 5000;
-        MyVisualScriptLogicProvider.ShowNotificationToAll(text, duration, FontFor(colorText));
+        MyVisualScriptLogicProvider.ShowNotificationToAll(text, duration, FontFor(font, legacyColorText));
     }
 
     // ----- Vote -----------------------------------------------------------
@@ -625,12 +625,21 @@ public sealed class AutoCommandExecutor
     private static bool TryParseSpan(string text, out TimeSpan span)
         => TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out span);
 
-    private static string FontFor(string colorText)
+    private static string FontFor(NotificationFont font, string legacyColorText)
     {
-        if (string.IsNullOrWhiteSpace(colorText))
+        switch (font)
+        {
+            case NotificationFont.White: return MyFontEnum.White;
+            case NotificationFont.Red: return MyFontEnum.Red;
+            case NotificationFont.Green: return MyFontEnum.Green;
+            case NotificationFont.Blue: return MyFontEnum.Blue;
+            case NotificationFont.DarkBlue: return MyFontEnum.DarkBlue;
+        }
+
+        if (string.IsNullOrWhiteSpace(legacyColorText))
             return MyFontEnum.White;
 
-        switch (colorText.Trim().ToLowerInvariant())
+        switch (legacyColorText.Trim().ToLowerInvariant())
         {
             case "red": return MyFontEnum.Red;
             case "green": return MyFontEnum.Green;

@@ -70,8 +70,8 @@ public sealed partial class EssentialsModule
         {
             try
             {
-                Regex regex = new Regex(pattern);
-                return Ok(grid => !string.IsNullOrEmpty(grid.DisplayName) && regex.IsMatch(grid.DisplayName));
+                Regex regex = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(25));
+                return Ok(grid => !string.IsNullOrEmpty(grid.DisplayName) && MatchesGridName(regex, grid.DisplayName));
             }
             catch (ArgumentException ex)
             {
@@ -408,6 +408,18 @@ public sealed partial class EssentialsModule
     private static (bool Ok, string Error, CleanupPredicate Predicate) Error(string error)
         => (false, error, null);
 
+    private static bool MatchesGridName(Regex regex, string name)
+    {
+        try
+        {
+            return regex.IsMatch(name);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return false;
+        }
+    }
+
     private static (bool Ok, string Error, CleanupPredicate Predicate) ParseInt(string value, Func<int, CleanupPredicate> predicate)
     {
         return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
@@ -430,31 +442,7 @@ public sealed partial class EssentialsModule
 
         foreach (MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group in MyCubeGridGroups.Static.Logical.Groups)
         {
-            List<MyCubeGrid> groupGrids = group.Nodes
-                .Select(node => node.NodeData)
-                .Where(IsCleanupCandidate)
-                .ToList();
-
-            if (groupGrids.Count == 0)
-                continue;
-
-            bool groupMatches = true;
-            foreach (MyCubeGrid grid in groupGrids)
-            {
-                foreach (CleanupPredicate predicate in predicates)
-                {
-                    if (predicate(grid))
-                        continue;
-
-                    groupMatches = false;
-                    break;
-                }
-
-                if (!groupMatches)
-                    break;
-            }
-
-            if (groupMatches)
+            if (MatchesCleanupGroup(group, predicates, out List<MyCubeGrid> groupGrids))
                 grids.AddRange(groupGrids);
         }
 
@@ -463,6 +451,28 @@ public sealed partial class EssentialsModule
             .Select(group => group.First())
             .ToList();
         return true;
+    }
+
+    internal static bool MatchesCleanupRule(MyCubeGrid grid, string conditions, out string error)
+    {
+        string[] args = Regex.Matches(conditions, "\"[^\"]*\"|\\S+")
+            .Cast<Match>()
+            .Select(match => match.Value.Trim('"'))
+            .ToArray();
+        if (!TryBuildCleanupPredicates(args, out List<CleanupPredicate> predicates, out error))
+            return false;
+
+        MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group = MyCubeGridGroups.Static.Logical.GetGroup(grid);
+        return IsCleanupCandidate(grid) && group != null && MatchesCleanupGroup(group, predicates, out _);
+    }
+
+    private static bool MatchesCleanupGroup(
+        MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group,
+        IReadOnlyList<CleanupPredicate> predicates,
+        out List<MyCubeGrid> grids)
+    {
+        grids = group.Nodes.Select(node => node.NodeData).Where(IsCleanupCandidate).ToList();
+        return grids.Count > 0 && grids.All(grid => predicates.All(predicate => predicate(grid)));
     }
 
     private static bool TryBuildCleanupPredicates(IReadOnlyList<string> args, out List<CleanupPredicate> predicates, out string error)

@@ -130,6 +130,19 @@ Cleanup conditions include: `name <regex>`, `blockslessthan <count>`,
 `nosubtype <subtype>`, `hassubtype-fast <subtype[,subtype...]>` /
 `nosubtype-fast <subtype[,subtype...]>`, and `haspilot`.
 
+The Cleanup tab also has **Grid Look Notifications**. Add a row with cleanup
+condition arguments (for example, `blockslessthan 20 hasownertype player`) and
+a message such as `Please repair or move {GridName}; it matches a cleanup rule.`
+Only a player listed in the grid's BigOwners sees the HUD notice, when looking
+directly at that grid from their character within 500 m. Rules use the same
+logical-group matching and default pilot exclusion as `!ess cleanup scan`.
+The first matching row is shown. Look checks run at most once every three
+seconds. For one minute after a player receives a notice, the plugin skips
+all look and rule checks for that player. A notice can appear again after
+that minute if the player is still looking at a matching grid. While a player
+keeps looking at the same grid, unmatched rules are not checked again. Empty
+rows have no effect.
+
 | Command                                                          | Permission  | Description                                                                                    |
 | ---------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- |
 | `!ess cleanup scan [conditions...]`                              | Admin       | Count grids matching cleanup conditions.                                                       |

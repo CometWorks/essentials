@@ -96,6 +96,18 @@ public enum StepAction
     None,
 }
 
+/// <summary>Fonts supported by the game's HUD notifications.</summary>
+public enum NotificationFont
+{
+    [EnumCaption("Default (use legacy Color setting)")]
+    Default,
+    White,
+    Red,
+    Green,
+    Blue,
+    DarkBlue,
+}
+
 /// <summary>
 /// One step of an <see cref="AutoCommand"/>. An optional shell script runs first
 /// (the sequence waits for it to exit, without blocking the server), then the
@@ -114,8 +126,11 @@ public struct CommandStep
                   "the message for Announce/Notify, or the auto command name for 'Run another auto command'."), StructCaption]
     public string Command { get; set; }
 
-    [StructMember("Optional colour for Announce/Notify: 'R G B' (0-255) or a name like Red. Empty = default.")]
+    [StructMember("Optional colour for Announce: 'R G B' (0-255) or a name like Red. Also used by legacy Notify steps when NotifyFont is Default.")]
     public string Color { get; set; }
+
+    [StructMember("HUD font for Notify. Default uses the legacy Color setting, or White when Color is empty.")]
+    public NotificationFont NotifyFont { get; set; }
 
     [StructMember("Notify display time in milliseconds (0 = default 5000).")]
     public int NotifyDurationMs { get; set; }
