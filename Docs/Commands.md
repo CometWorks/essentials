@@ -97,9 +97,12 @@ folder. Limits and enablement are configured on the **Homes** tab.
 
 The **Info Commands** tab defines public, top-level commands such as `!rules`
 or `!fixship`. Each row needs a **Command** name and at least one response:
-**ChatResponse** sends private chat text, **DialogResponse** opens a mission
-screen (or falls back to private chat when mission screens are unavailable),
-and **URL** sends an HTTP(S) link in chat and opens it in the Steam overlay.
+**ChatResponse** sends private chat text, **NotificationResponse** shows a
+center-screen notification only to the player using the command,
+**DialogResponse** opens a mission screen (or falls back to private chat when
+mission screens are unavailable), and **URL** sends an HTTP(S) link in chat and
+opens it in the Steam overlay. **NotificationDurationMs** sets that row's
+notification display time in milliseconds; `0` uses the default of `5000`.
 Set multiple response fields to use them together. Empty rows are ignored.
 Names are case-insensitive, and any words after the command name are ignored.
 Registered commands from Magnetar or other plugins take precedence; `!ess`,

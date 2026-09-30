@@ -71,7 +71,7 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
     [IntOption(0, 100, "Maximum saved homes per player.", Parent = "homes-core")]
     public int MaxHomesPerPlayer { get; set => SetField(ref field, value); } = 3;
 
-    [StructOption("Player info commands with chat, dialog, or URL responses. Use !ess info list to see configured names.", Parent = "info-list")]
+    [StructOption("Player info commands with chat, notification, dialog, or URL responses. Use !ess info list to see configured names.", Parent = "info-list")]
     public List<InfoCommand> InfoCommands { get; set => SetField(ref field, value); } = new();
 
     [IntOption(-1, int.MaxValue, "Maximum empty backpacks per player. Set -1 for no limit.", Parent = "cleanup-bags")]
@@ -129,6 +129,12 @@ public struct InfoCommand
 
     [StructMember("Private chat response when the command is used.")]
     public string ChatResponse { get; set; }
+
+    [StructMember("Center-screen notification shown only to the player using the command.")]
+    public string NotificationResponse { get; set; }
+
+    [StructMember("Notification display time in milliseconds (0 = default 5000).")]
+    public int NotificationDurationMs { get; set; }
 
     [StructMember("Mission-screen text when the command is used. Falls back to chat if mission screens are unavailable.")]
     public string DialogResponse { get; set; }
