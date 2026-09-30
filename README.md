@@ -13,6 +13,8 @@ common quality-of-life server behaviour, configured through the Magnetar
   commands and warning sequences.
 - **MOTD** — connect messages and a Steam-overlay URL, with first-time variants.
 - **Ship fixer** — cut/paste a grid to clear physics issues, with cooldowns.
+- **Voxel deformation controls** — independent switches for missile, meteor and
+  grid collision voxel cutouts.
 - **Blocks, economy, PCU/ownership transfer, Stone cleanup, grid conversion,
   safezone, GPS and station maintenance** utilities.
 

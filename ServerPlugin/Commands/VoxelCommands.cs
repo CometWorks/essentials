@@ -17,6 +17,42 @@ namespace ServerPlugin.Commands;
 
 public sealed partial class EssentialsModule
 {
+    [Command("voxels protect status", "Show voxel deformation protection settings.")]
+    [Permission(MyPromoteLevel.Admin)]
+    public string VoxelsProtectStatus()
+    {
+        var config = Plugin.Instance.PluginConfig;
+        return $"Voxel protection: missiles {ProtectionState(config.ProtectVoxelsFromMissiles)}, " +
+               $"meteors {ProtectionState(config.ProtectVoxelsFromMeteors)}, " +
+               $"grid collisions {ProtectionState(config.ProtectVoxelsFromGridCollisions)}.";
+    }
+
+    [Command("voxels protect missiles", "Enable or disable protection from missile voxel deformation.")]
+    [Permission(MyPromoteLevel.Admin)]
+    public string VoxelsProtectMissiles(bool enabled)
+    {
+        Plugin.Instance.PluginConfig.ProtectVoxelsFromMissiles = enabled;
+        return $"Missile voxel protection {ProtectionState(enabled)}.";
+    }
+
+    [Command("voxels protect meteors", "Enable or disable protection from meteor voxel deformation.")]
+    [Permission(MyPromoteLevel.Admin)]
+    public string VoxelsProtectMeteors(bool enabled)
+    {
+        Plugin.Instance.PluginConfig.ProtectVoxelsFromMeteors = enabled;
+        return $"Meteor voxel protection {ProtectionState(enabled)}.";
+    }
+
+    [Command("voxels protect collisions", "Enable or disable protection from grid collision voxel deformation.")]
+    [Permission(MyPromoteLevel.Admin)]
+    public string VoxelsProtectCollisions(bool enabled)
+    {
+        Plugin.Instance.PluginConfig.ProtectVoxelsFromGridCollisions = enabled;
+        return $"Grid collision voxel protection {ProtectionState(enabled)}.";
+    }
+
+    private static string ProtectionState(bool enabled) => enabled ? "on" : "off";
+
     [Command("voxels reset all", "Reset all voxel maps and planets.")]
     [Permission(MyPromoteLevel.Admin)]
     public void VoxelsResetAll()

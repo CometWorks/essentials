@@ -13,6 +13,7 @@ namespace Shared.Config;
 [Tab("info", caption: "Info Commands")]
 [Section("core", "general", "Core")]
 [Section("grid", "general", "Grid Utilities")]
+[Section("voxels", "general", "Voxel Deformation")]
 [Section("motd-main", "motd", "Messages")]
 [Section("motd-url", "motd", "URL")]
 [Section("cleanup-bags", "cleanup", "Backpacks")]
@@ -55,13 +56,22 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
     [IntOption(0, int.MaxValue, "Player !stone cooldown in seconds.", Parent = "grid")]
     public int StoneCooldownInSeconds { get; set => SetField(ref field, value); } = 10 * 60;
 
+    [BoolOption("Prevent missile explosions from deforming voxels. Grid and character damage still applies.", Parent = "voxels")]
+    public bool ProtectVoxelsFromMissiles { get; set => SetField(ref field, value); }
+
+    [BoolOption("Prevent meteor impacts on grids from cutting out voxels. Grid damage still applies.", Parent = "voxels")]
+    public bool ProtectVoxelsFromMeteors { get; set => SetField(ref field, value); }
+
+    [BoolOption("Prevent grid collision damage from cutting out voxels. Grid damage and collision physics still apply.", Parent = "voxels")]
+    public bool ProtectVoxelsFromGridCollisions { get; set => SetField(ref field, value); }
+
     [BoolOption("Allow players to save and teleport to home locations.", Parent = "homes-core")]
     public bool HomesEnabled { get; set => SetField(ref field, value); } = true;
 
     [IntOption(0, 100, "Maximum saved homes per player.", Parent = "homes-core")]
     public int MaxHomesPerPlayer { get; set => SetField(ref field, value); } = 3;
 
-    [StructOption("Configured info command names listed by !ess info list.", Parent = "info-list")]
+    [StructOption("Player info commands with chat, dialog, or URL responses. Use !ess info list to see configured names.", Parent = "info-list")]
     public List<InfoCommand> InfoCommands { get; set => SetField(ref field, value); } = new();
 
     [IntOption(-1, int.MaxValue, "Maximum empty backpacks per player. Set -1 for no limit.", Parent = "cleanup-bags")]
@@ -114,8 +124,17 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
 
 public struct InfoCommand
 {
-    [StructMember("Command name shown by !ess info list."), StructCaption]
+    [StructMember("Top-level player command, for example !rules or !fixship."), StructCaption]
     public string Command { get; set; }
+
+    [StructMember("Private chat response when the command is used.")]
+    public string ChatResponse { get; set; }
+
+    [StructMember("Mission-screen text when the command is used. Falls back to chat if mission screens are unavailable.")]
+    public string DialogResponse { get; set; }
+
+    [StructMember("HTTP(S) URL sent in chat and opened in the player's Steam overlay.")]
+    public string URL { get; set; }
 }
 
 public struct CleanupLookNotice

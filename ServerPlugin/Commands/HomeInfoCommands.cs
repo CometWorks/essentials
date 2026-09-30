@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using PluginSdk.Commands;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using Shared.Config;
 using VRage.Game.ModAPI;
 using VRageMath;
 
@@ -83,11 +80,7 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.None)]
     public string InfoList()
     {
-        List<string> commands = (Plugin.Instance?.PluginConfig?.InfoCommands ?? new List<InfoCommand>())
-            .Select(command => command.Command)
-            .Where(command => !string.IsNullOrWhiteSpace(command))
-            .OrderBy(command => command)
-            .ToList();
+        List<string> commands = InfoCommandHandler.ConfiguredNames(Plugin.Instance?.PluginConfig);
 
         return commands.Count == 0 ? "No info commands are configured." : string.Join(", ", commands);
     }

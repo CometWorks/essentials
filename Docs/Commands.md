@@ -95,6 +95,16 @@ folder. Limits and enablement are configured on the **Homes** tab.
 | `!ess home goto <name>` | None       | Teleport to a saved home.                       |
 | `!ess info list`        | None       | List configured info command names.             |
 
+The **Info Commands** tab defines public, top-level commands such as `!rules`
+or `!fixship`. Each row needs a **Command** name and at least one response:
+**ChatResponse** sends private chat text, **DialogResponse** opens a mission
+screen (or falls back to private chat when mission screens are unavailable),
+and **URL** sends an HTTP(S) link in chat and opens it in the Steam overlay.
+Set multiple response fields to use them together. Empty rows are ignored.
+Names are case-insensitive, and any words after the command name are ignored.
+Registered commands from Magnetar or other plugins take precedence; `!ess`,
+`!stone`, and `!help` cannot be used as custom info names.
+
 ## Blocks
 
 Toggle or remove functional blocks across all (non-projected) grids. Block
@@ -164,9 +174,15 @@ checks run at most once every three seconds. Empty rows have no effect.
 
 Voxel reset commands restore storage from the original data provider. Destructive
 commands require running the same command again within 30 seconds to confirm.
+Protection commands change the corresponding Quasar settings immediately and save
+them to the Essentials configuration. Use `on` or `off` to set protection.
 
 | Command                                      | Permission | Description                                                                                    |
 | -------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| `!ess voxels protect status`                 | Admin      | Show missile, meteor and grid collision voxel protection settings.                             |
+| `!ess voxels protect missiles <enabled>`     | Admin      | Enable or disable voxel protection from missile explosions.                                    |
+| `!ess voxels protect meteors <enabled>`      | Admin      | Enable or disable voxel protection from meteor impacts on grids.                               |
+| `!ess voxels protect collisions <enabled>`   | Admin      | Enable or disable voxel protection from grid collisions.                                       |
 | `!ess voxels reset all`                      | Admin      | Reset all voxel maps and planets.                                                              |
 | `!ess voxels cleanup asteroids`              | Admin      | Reset asteroid voxel maps with no grid or character nearby.                                    |
 | `!ess voxels cleanup distant [distance]`     | Admin      | Reset asteroid voxel maps with no grid or character within `distance` meters (default `1000`). |
