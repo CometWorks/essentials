@@ -70,6 +70,9 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
     [StructOption("Notify a grid's BigOwners when they look at a grid matching cleanup conditions. Empty by default.", Parent = "cleanup-notices")]
     public List<CleanupLookNotice> CleanupLookNotices { get; set => SetField(ref field, value); } = new();
 
+    [IntOption(1, 1440, "Minutes between reminders for a grid after its BigOwner receives a cleanup notice.", Parent = "cleanup-notices")]
+    public int CleanupLookReminderMinutes { get; set => SetField(ref field, value); } = 1;
+
     [BoolOption("Use BlockLimits Plugin when validating PCU transfer limits. Ignored when BlockLimits is detected and enabled.", Parent = "pcu-core")]
     public bool UseBlockLimitsPlugin { get; set => SetField(ref field, value); }
 

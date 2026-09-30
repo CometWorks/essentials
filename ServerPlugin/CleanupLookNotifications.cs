@@ -14,7 +14,7 @@ namespace ServerPlugin;
 internal sealed class CleanupLookNotifications
 {
     private readonly PluginConfig config;
-    private readonly Dictionary<long, (long GridId, DateTime NextNotice)> playerStates = new();
+    private readonly Dictionary<long, PlayerState> playerStates = new();
     private readonly HashSet<string> reportedInvalidRules = new();
     private readonly HashSet<long> online = new();
     private readonly List<long> disconnected = new();
@@ -35,6 +35,7 @@ internal sealed class CleanupLookNotifications
             return;
         }
 
+        DateTime nextReminder = now.AddMinutes(Math.Max(1, Math.Min(1440, config.CleanupLookReminderMinutes)));
         online.Clear();
         foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
         {
@@ -45,45 +46,36 @@ internal sealed class CleanupLookNotifications
                 continue;
             online.Add(identityId);
 
-            playerStates.TryGetValue(identityId, out var state);
-            // A recent recipient costs only a dictionary lookup, not a raycast or rule scan.
-            if (now < state.NextNotice)
-                continue;
+            if (!playerStates.TryGetValue(identityId, out PlayerState state))
+                playerStates[identityId] = state = new PlayerState();
 
             try
             {
-                MyCubeGrid grid = player.Controller?.ControlledEntity is MyCharacter character ? LookedAtGrid(character) : null;
-                if (grid == null || !grid.BigOwners.Contains(identityId))
+                if (state.ReminderGridId != 0)
                 {
-                    playerStates[identityId] = (0, state.NextNotice);
-                    continue;
+                    // Between reminders this costs only a time check; no grid or look work.
+                    if (now < state.NextReminder)
+                        continue;
                 }
 
-                if (state.GridId == grid.EntityId)
+                if (TryNotifyLookedAtGrid(player, identityId, state, nextReminder))
                     continue;
 
-                state.GridId = grid.EntityId;
-                foreach (CleanupLookNotice rule in config.CleanupLookNotices)
+                if (state.ReminderGridId != 0)
                 {
-                    if (string.IsNullOrWhiteSpace(rule.Conditions) || string.IsNullOrWhiteSpace(rule.Message))
-                        continue;
-
-                    if (!EssentialsModule.MatchesCleanupRule(grid, rule.Conditions, out string error))
+                    MyCubeGrid reminderGrid = MyEntities.GetEntityByIdOrDefault(state.ReminderGridId) as MyCubeGrid;
+                    if (reminderGrid != null && reminderGrid.BigOwners.Contains(identityId) &&
+                        state.ReminderRuleIndex < config.CleanupLookNotices.Count &&
+                        Matches(reminderGrid, config.CleanupLookNotices[state.ReminderRuleIndex]))
                     {
-                        if (error != null && reportedInvalidRules.Add(rule.Conditions))
-                            Plugin.Instance?.Log.Warning("Invalid cleanup look notification rule '{0}': {1}", rule.Conditions, error);
+                        Show(reminderGrid, config.CleanupLookNotices[state.ReminderRuleIndex], identityId);
+                        state.NextReminder = nextReminder;
                         continue;
                     }
 
-                    MyVisualScriptLogicProvider.ShowNotification(
-                        rule.Message.Replace("{GridName}", grid.DisplayName ?? ""),
-                        7000, MyFontEnum.White, identityId);
-                    state.NextNotice = now.AddMinutes(1);
-                    state.GridId = 0;
-                    break;
+                    state.ReminderGridId = 0;
+                    state.LastViewedGridId = 0;
                 }
-
-                playerStates[identityId] = state;
             }
             catch (Exception ex)
             {
@@ -99,6 +91,52 @@ internal sealed class CleanupLookNotifications
             playerStates.Remove(identityId);
     }
 
+    private bool TryNotifyLookedAtGrid(MyPlayer player, long identityId, PlayerState state, DateTime nextReminder)
+    {
+        MyCubeGrid grid = player.Controller?.ControlledEntity is MyCharacter character ? LookedAtGrid(character) : null;
+        if (grid == null || !grid.BigOwners.Contains(identityId))
+        {
+            state.LastViewedGridId = 0;
+            return false;
+        }
+
+        if (grid.EntityId == state.LastViewedGridId || grid.EntityId == state.ReminderGridId)
+            return false;
+
+        state.LastViewedGridId = grid.EntityId;
+        for (int i = 0; i < config.CleanupLookNotices.Count; i++)
+        {
+            CleanupLookNotice rule = config.CleanupLookNotices[i];
+            if (!Matches(grid, rule))
+                continue;
+
+            Show(grid, rule, identityId);
+            state.ReminderGridId = grid.EntityId;
+            state.ReminderRuleIndex = i;
+            state.NextReminder = nextReminder;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool Matches(MyCubeGrid grid, CleanupLookNotice rule)
+    {
+        if (string.IsNullOrWhiteSpace(rule.Conditions) || string.IsNullOrWhiteSpace(rule.Message))
+            return false;
+
+        if (EssentialsModule.MatchesCleanupRule(grid, rule.Conditions, out string error))
+            return true;
+
+        if (error != null && reportedInvalidRules.Add(rule.Conditions))
+            Plugin.Instance?.Log.Warning("Invalid cleanup look notification rule '{0}': {1}", rule.Conditions, error);
+        return false;
+    }
+
+    private static void Show(MyCubeGrid grid, CleanupLookNotice rule, long identityId)
+        => MyVisualScriptLogicProvider.ShowNotification(
+            rule.Message.Replace("{GridName}", grid.DisplayName ?? ""), 7000, MyFontEnum.White, identityId);
+
     private static MyCubeGrid LookedAtGrid(MyCharacter character)
     {
         MatrixD head = character.GetHeadMatrix(true);
@@ -111,5 +149,13 @@ internal sealed class CleanupLookNotifications
             MyCubeGrid grid => grid,
             _ => null
         };
+    }
+
+    private sealed class PlayerState
+    {
+        public long LastViewedGridId;
+        public long ReminderGridId;
+        public int ReminderRuleIndex;
+        public DateTime NextReminder;
     }
 }

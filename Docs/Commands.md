@@ -136,12 +136,13 @@ a message such as `Please repair or move {GridName}; it matches a cleanup rule.`
 Only a player listed in the grid's BigOwners sees the HUD notice, when looking
 directly at that grid from their character within 500 m. Rules use the same
 logical-group matching and default pilot exclusion as `!ess cleanup scan`.
-The first matching row is shown. Look checks run at most once every three
-seconds. For one minute after a player receives a notice, the plugin skips
-all look and rule checks for that player. A notice can appear again after
-that minute if the player is still looking at a matching grid. While a player
-keeps looking at the same grid, unmatched rules are not checked again. Empty
-rows have no effect.
+The first matching row is shown. Set **CleanupLookReminderMinutes** to choose
+how often the player is reminded (1–1440 minutes, default 1). After the first
+notice, reminders continue while the player is online, owns the grid, and its
+rule still matches, even after they look away. Between reminders the plugin
+does not raycast or evaluate the rule for that player. At a reminder time, a
+different matching grid the player is looking at takes priority. Initial look
+checks run at most once every three seconds. Empty rows have no effect.
 
 | Command                                                          | Permission  | Description                                                                                    |
 | ---------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------- |
