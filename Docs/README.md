@@ -25,7 +25,7 @@ All settings are edited in the Quasar web UI, generated from the plugin's
 | **Ship Fixer** | `fixship` cooldown, confirmation window, projector/eject behaviour. |
 | **Auto Commands** | The auto-command list plus the restart/shutdown sequences and vote duration — see [Auto Commands](AutoCommands.md). |
 | **Homes** | Player homes and limits. |
-| **Info Commands** | Custom player commands with chat, dialog and URL responses — see [Chat Commands](Commands.md#homes--info). |
+| **Info Commands** | Custom player commands with chat, center-screen notification, dialog and URL responses — see [Chat Commands](Commands.md#homes--info). |
 
 ![Config dialog example](ConfigDialogExample.png)
 

@@ -70,6 +70,7 @@ internal static class InfoCommandHandler
 
     private static bool HasResponse(InfoCommand command)
         => !string.IsNullOrWhiteSpace(command.ChatResponse) ||
+           !string.IsNullOrWhiteSpace(command.NotificationResponse) ||
            !string.IsNullOrWhiteSpace(command.DialogResponse) ||
            !string.IsNullOrWhiteSpace(command.URL);
 
@@ -77,6 +78,13 @@ internal static class InfoCommandHandler
     {
         if (!string.IsNullOrWhiteSpace(command.ChatResponse))
             SendChat(command.ChatResponse, identityId);
+
+        if (!string.IsNullOrWhiteSpace(command.NotificationResponse))
+            MyVisualScriptLogicProvider.ShowNotification(
+                command.NotificationResponse,
+                command.NotificationDurationMs > 0 ? command.NotificationDurationMs : 5000,
+                MyFontEnum.White,
+                identityId);
 
         if (!string.IsNullOrWhiteSpace(command.DialogResponse) &&
             !MissionScreens.ShowToPlayer(identityId, "Information", null, "!" + name, command.DialogResponse, "Close"))
