@@ -72,10 +72,9 @@ top-level `!stone` command. The complete command reference lives in
 ## Setup
 
 1. Clone the repository.
-2. Run `setup.py` to rename the template artifacts and auto-detect local reference paths.
-3. If auto-detection fails, set `Magnetar` and `Dedicated64` in `Directory.Build.props`.
-4. Build `Essentials.sln` in `Release`.
-5. Deploy the server plugin through Magnetar.
+2. Build `Essentials.sln`. The Dedicated Server and the Magnetar installation are found
+   automatically. If that fails, run `setup.py` or set `Dedicated64` and `Magnetar` in
+   `Directory.Build.props.user`.
 
 ### Plugin version
 
@@ -85,21 +84,26 @@ is shared by all contributors and stays under version control. Bump the version 
 
 ### Folder path overrides
 
-`Directory.Build.props.template` is a template for `Directory.Build.props`. The latter is a
-local config file you can use to override the reference folder paths (`Magnetar` for the
-plugin loader and `Dedicated64` for the Dedicated Server). It is **not committed** to the
-repository, so each contributor keeps their own local paths.
+`Directory.Build.props` declares the overridable folders with empty defaults: `Dedicated64`
+(the Dedicated Server's `DedicatedServer64` folder), `Magnetar` (the Magnetar installation
+folder holding `PluginSdk.dll`) and `MagnetarData` (the Magnetar config folder to deploy into).
+Empty `Dedicated64` and `Magnetar` values are auto-detected on Windows and Linux.
 
-`setup.py` copies `Directory.Build.props.template` to `Directory.Build.props` if the latter
-does not exist yet, then fills in the auto-detected paths. Because the override is not
-committed, anyone else who clones the repo and runs `setup.py` gets their own
-`Directory.Build.props` with paths properly auto-detected for their machine. Leaving a path
-empty in `Directory.Build.props` falls back to the platform-specific auto-detection further
-down in the same file (Windows and Linux), so the build works on both operating systems.
+To override them, put the first `PropertyGroup` of `Directory.Build.props` into
+`Directory.Build.props.user`, wrapped into a `<Project>` element. That file is not committed.
+`setup.py` writes it with the auto-detected Dedicated Server folder.
+
+### Development and deployment
+
+Load the working copy through a Magnetar development folder: start Magnetar with `-sources`
+and add the repository with the Sources button. Magnetar then compiles the plugin from source.
+
+Builds deploy nothing by default. To copy the build into `<MagnetarData>/Local`, set
+`MagnetarData` in `Directory.Build.props.user` or pass `-p:MagnetarData=...` to the build.
 
 ## Project Layout
 
-- `ServerPlugin` contains the Magnetar plugin entry point and deployment scripts.
+- `ServerPlugin` contains the Magnetar plugin entry point.
 - `Shared` contains common plugin code, configuration, logging, and Harmony patches.
 - `Essentials.xml` is the MagnetarHub plugin registration template.
 
