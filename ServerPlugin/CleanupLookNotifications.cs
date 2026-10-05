@@ -13,6 +13,7 @@ namespace ServerPlugin;
 
 internal sealed class CleanupLookNotifications
 {
+    private const double NotificationDistance = 500;
     private readonly PluginConfig config;
     private readonly Dictionary<long, PlayerState> playerStates = new();
     private readonly HashSet<string> reportedInvalidRules = new();
@@ -65,6 +66,8 @@ internal sealed class CleanupLookNotifications
                 {
                     MyCubeGrid reminderGrid = MyEntities.GetEntityByIdOrDefault(state.ReminderGridId) as MyCubeGrid;
                     if (reminderGrid != null && reminderGrid.BigOwners.Contains(identityId) &&
+                        player.Controller?.ControlledEntity?.Entity != null &&
+                        Vector3D.DistanceSquared(player.GetPosition(), reminderGrid.PositionComp.GetPosition()) <= NotificationDistance * NotificationDistance &&
                         state.ReminderRuleIndex < config.CleanupLookNotices.Count &&
                         Matches(reminderGrid, config.CleanupLookNotices[state.ReminderRuleIndex]))
                     {
@@ -141,7 +144,7 @@ internal sealed class CleanupLookNotifications
     {
         MatrixD head = character.GetHeadMatrix(true);
         Vector3D from = head.Translation + head.Forward * 0.5;
-        LineD line = new LineD(from, from + head.Forward * 500);
+        LineD line = new LineD(from, from + head.Forward * NotificationDistance);
         var hit = MyEntities.GetIntersectionWithLine(ref line, character, null, ignoreCharacters: true);
         return hit?.Entity switch
         {

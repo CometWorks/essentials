@@ -151,8 +151,10 @@ directly at that grid from their character within 500 m. Rules use the same
 logical-group matching and default pilot exclusion as `!ess cleanup scan`.
 The first matching row is shown. Set **CleanupLookReminderMinutes** to choose
 how often the player is reminded (1–1440 minutes, default 1). After the first
-notice, reminders continue while the player is online, owns the grid, and its
-rule still matches, even after they look away. Between reminders the plugin
+notice, reminders continue while the player is online, owns the grid, remains
+within 500 m of its position, and its rule still matches, even after they look
+away. A reminder that no longer qualifies is cleared; looking at a matching
+grid again starts a new notice. Between reminders the plugin
 does not raycast or evaluate the rule for that player. At a reminder time, a
 different matching grid the player is looking at takes priority. Initial look
 checks run at most once every three seconds. Empty rows have no effect.
