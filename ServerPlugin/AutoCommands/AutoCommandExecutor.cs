@@ -634,6 +634,7 @@ public sealed class AutoCommandExecutor
             case NotificationFont.Green: return MyFontEnum.Green;
             case NotificationFont.Blue: return MyFontEnum.Blue;
             case NotificationFont.DarkBlue: return MyFontEnum.DarkBlue;
+            case NotificationFont.Monospace: return "Monospace";
         }
 
         if (string.IsNullOrWhiteSpace(legacyColorText))

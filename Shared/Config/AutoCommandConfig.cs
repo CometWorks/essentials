@@ -106,6 +106,7 @@ public enum NotificationFont
     Green,
     Blue,
     DarkBlue,
+    Monospace,
 }
 
 /// <summary>

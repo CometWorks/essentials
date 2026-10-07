@@ -69,11 +69,14 @@ Each step has these fields:
 | **Action** | What the step does (see table below). |
 | **Command** | The command line (for `Command`), the message text (for `Announce`/`Notify`), or the auto-command name (for `RunAuto`). |
 | **Color** | Optional colour for `Announce` — `R G B` (0–255) or a name like `Red`, `Cyan`, `Yellow`. Existing `Notify` steps use `Red`, `Green`, or `Blue` from this field when `NotifyFont` is `Default`. |
-| **NotifyFont** | HUD font for `Notify`: `White`, `Red`, `Green`, `Blue`, or `DarkBlue`. `Default` keeps existing Color behavior, falling back to White. |
+| **NotifyFont** | HUD font for `Notify`: `White`, `Red`, `Green`, `Blue`, `DarkBlue`, or `Monospace`. `Default` keeps existing Color behavior, falling back to White. |
 | **NotifyDurationMs** | `Notify` on-screen time in milliseconds (0 = 5000). |
 | **ShellScript** | Optional shell command/script run **before** the action. |
 | **ShellTimeoutSeconds** | Max seconds to wait for the shell script (0 = wait indefinitely). |
 | **Delay** | Time to wait **after** this step before the next one (HH:MM:SS). |
+
+The vanilla HUD notification API accepts only a font name, with no RGB tint
+parameter. `Monospace` uses its native appearance; `Color` does not tint it.
 
 | Action | Effect |
 |---|---|
