@@ -18,7 +18,7 @@ All settings are edited in the Quasar web UI, generated from the plugin's
 
 | Tab | What it covers |
 |---|---|
-| **General** | Enable the plugin, matchmaking tags, grid-list output, stop-on-start, voxel deformation controls, and the economy stations' refill. |
+| **General** | Enable the plugin, matchmaking tags, grid-list output, stop-on-start, voxel deformation controls, the economy stations' refill, and refill containers. |
 | **MOTD** | Connect messages and the Steam-overlay URL, with new-user variants. |
 | **Cleanup** | Empty-backpack limit and grid look notifications. |
 | **PCU Tools** | PCU transfer limit checking (BlockLimits integration). |
@@ -58,3 +58,17 @@ runs unchanged.
 
 This matters for stations whose cargo players can use: with the vanilla refill,
 anyone can empty a shared container and find new loot after the next tick.
+
+### Refill containers
+
+**General → Refill Containers** keeps cargo containers stocked with fixed items,
+independent of the economy. Each rule names the containers (case-insensitive),
+the seconds between refills, and the items with the minimum amount of each.
+Every interval, each matching container is topped up to those amounts; items
+above the minimum and other items stay as they are. Only containers owned by an
+NPC are refilled, so players can't name their own after a rule and farm it.
+Share the container with all players to make it a free supply.
+
+Items are written as `Type/Subtype`, for example the Elite tools
+`PhysicalGunObject/Welder4Item`, `PhysicalGunObject/AngleGrinder4Item` and
+`PhysicalGunObject/HandDrill4Item`. An unknown item is logged once and skipped.

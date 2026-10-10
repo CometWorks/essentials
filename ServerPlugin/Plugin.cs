@@ -52,6 +52,7 @@ public class Plugin : IPlugin, ICommonPlugin
     // Timed/triggered server command sequences. Null until Init has run.
     public AutoCommandExecutor AutoCommands { get; private set; }
     private CleanupLookNotifications cleanupLookNotifications;
+    private RefillContainers refillContainers;
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     public void Init(object gameInstance)
@@ -78,6 +79,7 @@ public class Plugin : IPlugin, ICommonPlugin
 
         AutoCommands = new AutoCommandExecutor(config.Data, Log);
         cleanupLookNotifications = new CleanupLookNotifications(config.Data);
+        refillContainers = new RefillContainers(config.Data, Log);
         ServerControl.Terminating += OnTerminating;
 
         if (!PatchHelpers.HarmonyPatchAll(Log, new Harmony(Name)))
@@ -138,5 +140,6 @@ public class Plugin : IPlugin, ICommonPlugin
         PatchHelpers.PatchUpdates();
         AutoCommands?.Update();
         cleanupLookNotifications?.Update();
+        refillContainers?.Update();
     }
 }

@@ -15,6 +15,7 @@ namespace Shared.Config;
 [Section("grid", "general", "Grid Utilities")]
 [Section("voxels", "general", "Voxel Deformation")]
 [Section("stations", "general", "Economy Stations")]
+[Section("refill", "general", "Refill Containers")]
 [Section("motd-main", "motd", "Messages")]
 [Section("motd-url", "motd", "URL")]
 [Section("cleanup-bags", "cleanup", "Backpacks")]
@@ -94,6 +95,9 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
     [BoolOption("Fill the turrets with ammo.", Parent = "stations")]
     public bool StationReloadTurrets { get; set => SetField(ref field, value); } = true;
 
+    [StructOption("NPC-owned cargo containers topped up to a minimum stock on a timer, matched by name. Empty by default.", Parent = "refill")]
+    public List<RefillContainer> RefillContainers { get; set => SetField(ref field, value); } = new();
+
     [BoolOption("Allow players to save and teleport to home locations.", Parent = "homes-core")]
     public bool HomesEnabled { get; set => SetField(ref field, value); } = true;
 
@@ -170,6 +174,27 @@ public struct InfoCommand
 
     [StructMember("HTTP(S) URL sent in chat and opened in the player's Steam overlay.")]
     public string URL { get; set; }
+}
+
+public struct RefillContainer
+{
+    [StructMember("Name of the cargo containers to refill (case-insensitive). Only containers owned by an NPC are refilled."), StructCaption]
+    public string ContainerName { get; set; }
+
+    [StructMember("Seconds between refills.")]
+    public int IntervalSeconds { get; set; }
+
+    [StructMember("Items each container is topped up to.")]
+    public List<RefillItem> Items { get; set; }
+}
+
+public struct RefillItem
+{
+    [StructMember("Item id as Type/Subtype, for example PhysicalGunObject/Welder4Item."), StructCaption]
+    public string Item { get; set; }
+
+    [StructMember("Amount each container holds at least after a refill.")]
+    public int MinimumAmount { get; set; }
 }
 
 public struct CleanupLookNotice
