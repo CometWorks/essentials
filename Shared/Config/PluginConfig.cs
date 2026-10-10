@@ -14,6 +14,8 @@ namespace Shared.Config;
 [Section("core", "general", "Core")]
 [Section("grid", "general", "Grid Utilities")]
 [Section("voxels", "general", "Voxel Deformation")]
+[Section("stations", "general", "Economy Stations")]
+[Section("refill", "general", "Refill Containers")]
 [Section("motd-main", "motd", "Messages")]
 [Section("motd-url", "motd", "URL")]
 [Section("cleanup-bags", "cleanup", "Backpacks")]
@@ -64,6 +66,37 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
 
     [BoolOption("Prevent grid collision damage from cutting out voxels. Grid damage and collision physics still apply.", Parent = "voxels")]
     public bool ProtectVoxelsFromGridCollisions { get; set => SetField(ref field, value); }
+
+    [BoolOption("Replace the economy's refill of NPC trade stations with the options below. Off: the game refills every station block it knows.", Parent = "stations")]
+    public bool StationRefillEnabled { get; set => SetField(ref field, value); }
+
+    [StringOption(description: "Name of the station cargo containers and cryo chambers the refill puts loot into and hides from inventory screens. " +
+                              "Empty: no block gets loot or is hidden.", Parent = "stations")]
+    public string StationLootContainerName { get; set => SetField(ref field, value); } = "";
+
+    [BoolOption("Fill the empty loot containers with the station type's loot.", Parent = "stations")]
+    public bool StationRefillLoot { get; set => SetField(ref field, value); } = true;
+
+    [BoolOption("Hide the loot containers from inventory screens. Players can still open them directly.", Parent = "stations")]
+    public bool StationHideLootContainers { get; set => SetField(ref field, value); } = true;
+
+    [BoolOption("Fill the reactors with fuel.", Parent = "stations")]
+    public bool StationRefuelReactors { get; set => SetField(ref field, value); } = true;
+
+    [BoolOption("Charge the batteries fully.", Parent = "stations")]
+    public bool StationRechargeBatteries { get; set => SetField(ref field, value); } = true;
+
+    [BoolOption("Fill the hydrogen and oxygen tanks.", Parent = "stations")]
+    public bool StationRefillGasTanks { get; set => SetField(ref field, value); } = true;
+
+    [BoolOption("Add 10,000 ice to every gas generator.", Parent = "stations")]
+    public bool StationAddIceToGasGenerators { get; set => SetField(ref field, value); } = true;
+
+    [BoolOption("Fill the turrets with ammo.", Parent = "stations")]
+    public bool StationReloadTurrets { get; set => SetField(ref field, value); } = true;
+
+    [StructOption("NPC-owned cargo containers topped up to a minimum stock on a timer, matched by name. Empty by default.", Parent = "refill")]
+    public List<RefillContainer> RefillContainers { get; set => SetField(ref field, value); } = new();
 
     [BoolOption("Allow players to save and teleport to home locations.", Parent = "homes-core")]
     public bool HomesEnabled { get; set => SetField(ref field, value); } = true;
@@ -141,6 +174,27 @@ public struct InfoCommand
 
     [StructMember("HTTP(S) URL sent in chat and opened in the player's Steam overlay.")]
     public string URL { get; set; }
+}
+
+public struct RefillContainer
+{
+    [StructMember("Name of the cargo containers to refill (case-insensitive). Only containers owned by an NPC are refilled."), StructCaption]
+    public string ContainerName { get; set; }
+
+    [StructMember("Seconds between refills.")]
+    public int IntervalSeconds { get; set; }
+
+    [StructMember("Items each container is topped up to.")]
+    public List<RefillItem> Items { get; set; }
+}
+
+public struct RefillItem
+{
+    [StructMember("Item id as Type/Subtype, for example PhysicalGunObject/Welder4Item."), StructCaption]
+    public string Item { get; set; }
+
+    [StructMember("Amount each container holds at least after a refill.")]
+    public int MinimumAmount { get; set; }
 }
 
 public struct CleanupLookNotice
