@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
@@ -17,6 +19,7 @@ namespace ServerPlugin;
 internal sealed class RefillContainers
 {
     private const string TypePrefix = "MyObjectBuilder_";
+    private const float FullGasLevel = 0.999f;
 
     private readonly PluginConfig config;
     private readonly IPluginLogger log;
@@ -98,10 +101,33 @@ internal sealed class RefillContainers
         {
             if (item.MinimumAmount <= 0 || !TryGetItem(item.Item, out var id))
                 continue;
-            var missing = (MyFixedPoint)item.MinimumAmount - inventory.GetItemAmount(id);
-            if (missing > 0)
-                inventory.AddItems(missing, MyObjectBuilderSerializer.CreateNewObject(id));
+            var missing = (MyFixedPoint)item.MinimumAmount - CountUsable(inventory, id);
+            if (missing <= 0)
+                continue;
+            var content = MyObjectBuilderSerializer.CreateNewObject(id);
+            // New gas bottles would be empty
+            if (content is MyObjectBuilder_GasContainerObject bottle)
+                bottle.GasLevel = 1f;
+            inventory.AddItems(missing, content);
         }
+    }
+
+    // Empty or partly used bottles don't count, so players can't keep the stock down with them
+    private static MyFixedPoint CountUsable(MyInventory inventory, MyDefinitionId id)
+    {
+        MyFixedPoint amount = 0;
+        foreach (var item in inventory.GetItems())
+        {
+            if (item.Content.GetObjectId() != id)
+                continue;
+            if (
+                item.Content is MyObjectBuilder_GasContainerObject bottle
+                && bottle.GasLevel < FullGasLevel
+            )
+                continue;
+            amount += item.Amount;
+        }
+        return amount;
     }
 
     private bool TryGetItem(string text, out MyDefinitionId id)
