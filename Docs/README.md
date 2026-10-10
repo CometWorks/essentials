@@ -18,7 +18,7 @@ All settings are edited in the Quasar web UI, generated from the plugin's
 
 | Tab | What it covers |
 |---|---|
-| **General** | Enable the plugin, matchmaking tags, grid-list output, stop-on-start, and voxel deformation controls. |
+| **General** | Enable the plugin, matchmaking tags, grid-list output, stop-on-start, voxel deformation controls, and the economy stations' refill. |
 | **MOTD** | Connect messages and the Steam-overlay URL, with new-user variants. |
 | **Cleanup** | Empty-backpack limit and grid look notifications. |
 | **PCU Tools** | PCU transfer limit checking (BlockLimits integration). |
@@ -39,3 +39,22 @@ impact can therefore still damage or embed a grid; test collision protection wit
 your server's usual ships and speeds before enabling it broadly. Admins can also
 change the switches in game, for example with `!ess voxels protect missiles on`,
 and inspect them with `!ess voxels protect status`.
+
+### Economy stations
+
+Every economy tick (`EconomyTickInSeconds`, 600 s by default) the game refills
+each NPC trade station grid. It fills reactors with fuel, charges batteries,
+fills gas tanks, adds 10,000 ice to every gas generator, and fills turrets with
+ammo. It also puts the station type's loot (tools, datapads, Space Credits) into
+every empty cargo container and cryo chamber, and hides them all from inventory
+screens.
+
+The **General → Economy Stations** section takes this over when
+**StationRefillEnabled** is on. Each part has its own switch, and loot goes only
+into the cargo containers and cryo chambers named **StationLootContainerName**
+(case-insensitive). Only those are hidden; other containers keep their setting.
+With the name empty, nothing gets loot or is hidden. Off, the game's own refill
+runs unchanged.
+
+This matters for stations whose cargo players can use: with the vanilla refill,
+anyone can empty a shared container and find new loot after the next tick.

@@ -15,6 +15,8 @@ common quality-of-life server behaviour, configured through the Magnetar
 - **Ship fixer** — cut/paste a grid to clear physics issues, with cooldowns.
 - **Voxel deformation controls** — independent switches for missile, meteor and
   grid collision voxel cutouts.
+- **Economy station refill** — choose which parts of the economy's station refill
+  run, and limit its loot to a named cargo container.
 - **Blocks, economy, PCU/ownership transfer, Stone cleanup, grid conversion,
   safezone, GPS and station maintenance** utilities.
 
