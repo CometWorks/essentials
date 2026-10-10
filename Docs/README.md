@@ -74,5 +74,5 @@ Items are written as `Type/Subtype`, for example the Elite tools
 `PhysicalGunObject/HandDrill4Item`, the bottles `OxygenContainerObject/OxygenBottle`
 and `GasContainerObject/HydrogenBottle`, or the suit battery pack
 `ConsumableItem/Powerkit`. An unknown item is logged once and skipped. Bottles
-are added full, and only full bottles count toward the minimum, so returning
-empty ones doesn't stop the refill.
+are added full, and bottles of a rule's item that aren't full are removed from
+the container at each refill.

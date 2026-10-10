@@ -101,7 +101,8 @@ internal sealed class RefillContainers
         {
             if (item.MinimumAmount <= 0 || !TryGetItem(item.Item, out var id))
                 continue;
-            var missing = (MyFixedPoint)item.MinimumAmount - CountUsable(inventory, id);
+            RemoveUsedBottles(inventory, id);
+            var missing = (MyFixedPoint)item.MinimumAmount - inventory.GetItemAmount(id);
             if (missing <= 0)
                 continue;
             var content = MyObjectBuilderSerializer.CreateNewObject(id);
@@ -112,22 +113,20 @@ internal sealed class RefillContainers
         }
     }
 
-    // Empty or partly used bottles don't count, so players can't keep the stock down with them
-    private static MyFixedPoint CountUsable(MyInventory inventory, MyDefinitionId id)
+    // Empty or partly used bottles of a rule's item are taken out, so they neither pile up
+    // nor count toward the minimum
+    private static void RemoveUsedBottles(MyInventory inventory, MyDefinitionId id)
     {
-        MyFixedPoint amount = 0;
-        foreach (var item in inventory.GetItems())
+        var items = inventory.GetItems();
+        for (var i = items.Count - 1; i >= 0; i--)
         {
-            if (item.Content.GetObjectId() != id)
-                continue;
             if (
-                item.Content is MyObjectBuilder_GasContainerObject bottle
+                items[i].Content is MyObjectBuilder_GasContainerObject bottle
+                && bottle.GetObjectId() == id
                 && bottle.GasLevel < FullGasLevel
             )
-                continue;
-            amount += item.Amount;
+                inventory.RemoveItemsAt(i);
         }
-        return amount;
     }
 
     private bool TryGetItem(string text, out MyDefinitionId id)
