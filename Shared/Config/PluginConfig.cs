@@ -95,7 +95,7 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
     [BoolOption("Fill the turrets with ammo.", Parent = "stations")]
     public bool StationReloadTurrets { get; set => SetField(ref field, value); } = true;
 
-    [StructOption("NPC-owned cargo containers topped up to a minimum stock on a timer, matched by name. Empty by default.", Parent = "refill")]
+    [StructOption("NPC-owned blocks topped up on a timer, matched by name: blocks with an inventory to a minimum stock, batteries to a full charge. Empty by default.", Parent = "refill")]
     public List<RefillContainer> RefillContainers { get; set => SetField(ref field, value); } = new();
 
     [BoolOption("Allow players to save and teleport to home locations.", Parent = "homes-core")]
@@ -178,13 +178,13 @@ public struct InfoCommand
 
 public struct RefillContainer
 {
-    [StructMember("Name of the cargo containers to refill (case-insensitive). Only containers owned by an NPC are refilled."), StructCaption]
+    [StructMember("Name of the blocks to refill (case-insensitive): cargo containers, reactors and other blocks with an inventory get the items, batteries a full charge. Only blocks owned by an NPC are refilled."), StructCaption]
     public string ContainerName { get; set; }
 
     [StructMember("Seconds between refills.")]
     public int IntervalSeconds { get; set; }
 
-    [StructMember("Items each container is topped up to.")]
+    [StructMember("Items each block with an inventory is topped up to. Empty for batteries.")]
     public List<RefillItem> Items { get; set; }
 }
 

@@ -61,13 +61,15 @@ anyone can empty a shared container and find new loot after the next tick.
 
 ### Refill containers
 
-**General → Refill Containers** keeps cargo containers stocked with fixed items,
-independent of the economy. Each rule names the containers (case-insensitive),
-the seconds between refills, and the items with the minimum amount of each.
-Every interval, each matching container is topped up to those amounts; items
-above the minimum and other items stay as they are. Only containers owned by an
-NPC are refilled, so players can't name their own after a rule and farm it.
-Share the container with all players to make it a free supply.
+**General → Refill Containers** keeps blocks stocked with fixed items,
+independent of the economy. Each rule names the blocks (case-insensitive), the
+seconds between refills, and the items with the minimum amount of each. Every
+interval, each matching block with an inventory (a cargo container, a reactor
+and so on) is topped up to those amounts; items above the minimum and other
+items stay as they are. A matching battery is charged full; its rule needs no
+items. Only blocks owned by an NPC are refilled, so players can't name their
+own after a rule and farm it. Share a container with all players to make it a
+free supply.
 
 Items are written as `Type/Subtype`, for example the Elite tools
 `PhysicalGunObject/Welder4Item`, `PhysicalGunObject/AngleGrinder4Item` and

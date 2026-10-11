@@ -4,6 +4,7 @@ using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using Shared.Config;
@@ -14,7 +15,8 @@ using VRage.ObjectBuilders;
 
 namespace ServerPlugin;
 
-// Tops up NPC-owned cargo containers of a configured name to a minimum stock on a timer.
+// Tops up NPC-owned blocks of a configured name on a timer: a block with an inventory (cargo
+// container, reactor, ...) to a minimum stock, a battery to a full charge.
 // Player-owned containers are skipped, so players can't name their own after a rule and farm it.
 internal sealed class RefillContainers
 {
@@ -67,16 +69,17 @@ internal sealed class RefillContainers
 
         foreach (var entity in MyEntities.GetEntities())
         {
-            if (entity is not MyCubeGrid grid || grid.MarkedForClose)
+            if (
+                entity is not MyCubeGrid grid
+                || grid.MarkedForClose
+                || !grid.BigOwners.Exists(MySession.Static.Players.IdentityIsNpc)
+            )
                 continue;
-            foreach (var container in grid.GetFatBlocks<MyCargoContainer>())
+            foreach (var block in grid.GetFatBlocks<MyTerminalBlock>())
             {
-                if (
-                    container.MarkedForClose
-                    || !MySession.Static.Players.IdentityIsNpc(container.OwnerId)
-                )
+                if (block.MarkedForClose || !MySession.Static.Players.IdentityIsNpc(block.OwnerId))
                     continue;
-                var name = container.CustomName?.ToString().Trim();
+                var name = block.CustomName?.ToString().Trim();
                 foreach (var rule in due)
                 {
                     if (
@@ -86,17 +89,19 @@ internal sealed class RefillContainers
                             StringComparison.OrdinalIgnoreCase
                         )
                     )
-                        Refill(container, rule);
+                        Refill(block, rule);
                 }
             }
         }
     }
 
-    private void Refill(MyCargoContainer container, RefillContainer rule)
+    private void Refill(MyTerminalBlock block, RefillContainer rule)
     {
-        if (rule.Items == null || container.InventoryCount == 0)
+        if (block is MyBatteryBlock battery)
+            battery.CurrentStoredPower = battery.MaxStoredPower;
+        if (rule.Items == null || block.InventoryCount == 0)
             return;
-        var inventory = container.GetInventory();
+        var inventory = block.GetInventory();
         foreach (var item in rule.Items)
         {
             if (item.MinimumAmount <= 0 || !TryGetItem(item.Item, out var id))
