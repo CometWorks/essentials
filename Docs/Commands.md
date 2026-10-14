@@ -2,8 +2,21 @@
 
 Most Essentials commands live under the **`!ess`** prefix and are typed in the
 global chat (or run from the server console). The player-only `!stone` command
-keeps its legacy top-level name. The host suppresses recognised command lines
-from normal chat.
+keeps its legacy top-level name, and a few commands also have the short form
+known from Torch:
+
+| Short form                | Same as                       |
+| ------------------------- | ----------------------------- |
+| `!fixship [gridName]`     | `!ess fixship [gridName]`     |
+| `!fixshipmod [gridName]`  | `!ess fixshipmod [gridName]`  |
+| `!fixshipmodid [gridId]`  | `!ess fixshipmodid [gridId]`  |
+| `!reload`                 | `!ess reload`                 |
+
+The arguments of a short form need a Magnetar release newer than 2.4.3.4;
+2.4.3.4 and older run only the bare forms and answer "Unknown command" to
+`!fixship MyShip`. Magnetar itself provides `!save`, `!restart`,
+`!stop` and `!quit`. The host suppresses recognised command lines from normal
+chat.
 
 - `!ess` — overview of available commands.
 - `!ess help` — list commands; `!ess help <command>` shows usage for one.
@@ -96,7 +109,7 @@ folder. Limits and enablement are configured on the **Homes** tab.
 | `!ess info list`        | None       | List configured info command names.             |
 
 The **Info Commands** tab defines public, top-level commands such as `!rules`
-or `!fixship`. Each row needs a **Command** name and at least one response:
+or `!discord`. Each row needs a **Command** name and at least one response:
 **ChatResponse** sends private chat text, **NotificationResponse** shows a
 center-screen notification only to the player using the command,
 **DialogResponse** opens a mission screen (or falls back to private chat when
@@ -105,8 +118,9 @@ opens it in the Steam overlay. **NotificationDurationMs** sets that row's
 notification display time in milliseconds; `0` uses the default of `5000`.
 Set multiple response fields to use them together. Empty rows are ignored.
 Names are case-insensitive, and any words after the command name are ignored.
-Registered commands from Magnetar or other plugins take precedence; `!ess`,
-`!stone`, and `!help` cannot be used as custom info names.
+Registered commands from Magnetar or other plugins take precedence, so an info
+command named like one of them, `fixship` or `reload` for example, never
+answers; `!ess`, `!stone`, and `!help` cannot be used as custom info names.
 
 ## Blocks
 
@@ -289,8 +303,8 @@ accessible inventories on the looked-at grid group and the caller's account.
 
 Cuts and re-pastes a grid to clear physics/clang issues. Behaviour (cooldown,
 confirmation window, projector handling, ejecting players) is governed by the
-**Ship Fixer** config tab; the player `!ess fixship` command can be disabled
-there.
+**Ship Fixer** config tab; the player `!ess fixship` command (and `!fixship`)
+can be disabled there. Each command also has the short form without `!ess`.
 
 | Command                      | Permission | Description                                               |
 | ---------------------------- | ---------- | --------------------------------------------------------- |

@@ -74,7 +74,11 @@ public class Plugin : IPlugin, ICommonPlugin
         ServerCommands.Register(
             Assembly.GetExecutingAssembly(),
             typeof(EssentialsModule),
-            typeof(StoneCommand));
+            typeof(StoneCommand),
+            typeof(FixShipCommand),
+            typeof(FixShipModCommand),
+            typeof(FixShipModIdCommand),
+            typeof(ReloadCommand));
 
         AutoCommands = new AutoCommandExecutor(config.Data, Log);
         cleanupLookNotifications = new CleanupLookNotifications(config.Data);
