@@ -24,7 +24,8 @@ See [Docs/](Docs/README.md) for the full documentation and the
 ## Command Coverage
 
 Essentials currently exposes **160** `!ess` chat commands plus the legacy
-top-level `!stone` command. The complete command reference lives in
+top-level `!stone` command and the short forms `!fixship`, `!fixshipmod`,
+`!fixshipmodid` and `!reload`. The complete command reference lives in
 [Docs/Commands.md](Docs/Commands.md); the main groups are:
 
 - **Admin/player QoL** — MOTD, stats, player count, player list, promote level,
