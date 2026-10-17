@@ -278,10 +278,12 @@ def test_protection_needs_the_plugin_enabled(game, rock):
     assert fire_missile(game, rock_id) > 1
 
 
-def drop_meteor(game, rock_id: int) -> float:
-    """Drops a meteor on a slab of armor half sunk into the top of the
-    asteroid and returns how much voxel content the impact took away. A meteor
-    hitting the voxels makes no crater; the cut comes from the grid hit."""
+def drop_meteors(game, rock_id: int) -> float:
+    """Drops three meteors on a slab of armor half sunk into the top of the
+    asteroid and returns how much voxel content the impacts took away. A meteor
+    hitting the voxels makes no crater; the cut comes from the grid hit. The
+    game picks each meteor's size and speed at random, and one meteor alone
+    sometimes cuts nothing."""
     x, z = CENTER[0], CENTER[2]
     y = CENTER[1] + RADIUS
     while content(game, rock_id, (x, y, z), 1) == 0:
@@ -290,17 +292,18 @@ def drop_meteor(game, rock_id: int) -> float:
     game.spawn(slab)
     time.sleep(2)
     before = total(game, rock_id)
-    game.a.probe("meteor", x, y + 60, z, 0, -1, 0)
-    time.sleep(8)
+    for _ in range(3):
+        game.a.probe("meteor", x, y + 60, z, 0, -1, 0)
+        time.sleep(8)
     return before - total(game, rock_id)
 
 
 def test_meteors_cut_voxels_without_protection(game, rock):
     rock_id, _ = rock
-    assert drop_meteor(game, rock_id) > 1
+    assert drop_meteors(game, rock_id) > 1
 
 
 def test_meteor_protection(game, rock):
     rock_id, _ = rock
     game.configure(ProtectVoxelsFromMeteors=True)
-    assert drop_meteor(game, rock_id) == pytest.approx(0, abs=0.5)
+    assert drop_meteors(game, rock_id) == pytest.approx(0, abs=0.5)
