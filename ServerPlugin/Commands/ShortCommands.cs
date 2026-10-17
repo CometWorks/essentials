@@ -14,8 +14,8 @@ public sealed class FixShipCommand : CommandModule
 {
     [Command("", "Cuts and pastes a ship you are looking at or with the given name.")]
     [Permission(MyPromoteLevel.None)]
-    public void FixShip(string gridName = null)
-        => ShipFixerCommands.FixShipPlayer(Context, gridName);
+    public void FixShip(string gridName = null) =>
+        ShipFixerCommands.FixShipPlayer(Context, gridName);
 }
 
 [CommandRoot("fixshipmod", "Essentials", "Fix a ship by look target or name (moderator)")]
@@ -23,8 +23,8 @@ public sealed class FixShipModCommand : CommandModule
 {
     [Command("", "Cuts and pastes a ship by look target or grid name.")]
     [Permission(MyPromoteLevel.Moderator)]
-    public void FixShipMod(string gridName = null)
-        => ShipFixerCommands.FixShipModeratorByLookOrName(Context, gridName);
+    public void FixShipMod(string gridName = null) =>
+        ShipFixerCommands.FixShipModeratorByLookOrName(Context, gridName);
 }
 
 [CommandRoot("fixshipmodid", "Essentials", "Fix a ship by entity id (moderator)")]
@@ -32,8 +32,8 @@ public sealed class FixShipModIdCommand : CommandModule
 {
     [Command("", "Cuts and pastes a ship by entity id.")]
     [Permission(MyPromoteLevel.Moderator)]
-    public void FixShipModId(long gridId = 0)
-        => ShipFixerCommands.FixShipModeratorById(Context, gridId);
+    public void FixShipModId(long gridId = 0) =>
+        ShipFixerCommands.FixShipModeratorById(Context, gridId);
 }
 
 [CommandRoot("reload", "Essentials", "Save the world and reload the dedicated server config")]
@@ -41,6 +41,6 @@ public sealed class ReloadCommand : CommandModule
 {
     [Command("", "Save the world and reload the dedicated server config.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string Reload()
-        => ServerControl.ReloadConfig() ? "Configuration reloaded." : "No world is loaded.";
+    public string Reload() =>
+        ServerControl.ReloadConfig() ? "Configuration reloaded." : "No world is loaded.";
 }

@@ -23,7 +23,8 @@ public sealed class PcuTransferCore
         bool pcu,
         bool force,
         out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
-        out string error)
+        out string error
+    )
     {
         if (!TryGetSingleGroup(groups, out group, out error))
             return false;
@@ -37,10 +38,15 @@ public sealed class PcuTransferCore
     public bool TryGetNobodyTransferGroup(
         ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups,
         out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
-        out string error)
-        => TryGetSingleGroup(groups, out group, out error);
+        out string error
+    ) => TryGetSingleGroup(groups, out group, out error);
 
-    public string Transfer(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, MyIdentity newAuthor, bool pcu, bool ownership)
+    public string Transfer(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+        MyIdentity newAuthor,
+        bool pcu,
+        bool ownership
+    )
     {
         if (!pcu && !ownership)
             return "The plugindev did an oopsie and nothing was changed!";
@@ -67,7 +73,11 @@ public sealed class PcuTransferCore
                 long oldAuthor = block.BuiltBy;
                 bool forceTransfer = oldAuthor == 0 || unknownIdentities.Contains(oldAuthor);
 
-                if (!forceTransfer && oldAuthor != newAuthorId && !knownIdentities.Contains(oldAuthor))
+                if (
+                    !forceTransfer
+                    && oldAuthor != newAuthorId
+                    && !knownIdentities.Contains(oldAuthor)
+                )
                 {
                     if (MySession.Static.Players.TryGetIdentity(oldAuthor) == null)
                     {
@@ -90,7 +100,13 @@ public sealed class PcuTransferCore
             }
 
             foreach (long author in authors)
-                MyMultiplayer.RaiseEvent(grid, x => new Action<long, long>(x.TransferBlocksBuiltByID), author, newAuthorId, new EndpointId());
+                MyMultiplayer.RaiseEvent(
+                    grid,
+                    x => new Action<long, long>(x.TransferBlocksBuiltByID),
+                    author,
+                    newAuthorId,
+                    new EndpointId()
+                );
         }
 
         if (pcu && ownership)
@@ -102,7 +118,11 @@ public sealed class PcuTransferCore
         return $"Ownership was transferred to {newAuthor.DisplayName}!";
     }
 
-    public string TransferNobody(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, bool pcu, bool ownership)
+    public string TransferNobody(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+        bool pcu,
+        bool ownership
+    )
     {
         if (!pcu && !ownership)
             return "The plugindev did an oopsie and nothing was changed!";
@@ -149,7 +169,8 @@ public sealed class PcuTransferCore
     private static bool TryGetSingleGroup(
         ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups,
         out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
-        out string error)
+        out string error
+    )
     {
         if (groups.Count < 1)
         {
@@ -175,12 +196,26 @@ public sealed class PcuTransferCore
         return true;
     }
 
-    private bool CheckLimits(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, MyIdentity newAuthor, out string error)
+    private bool CheckLimits(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+        MyIdentity newAuthor,
+        out string error
+    )
     {
         List<MySlimBlock> blocks = GetAllBlocksForGroup(group, newAuthor);
 
-        if ((BlockLimitsPluginBridge.IsAvailableAndEnabled() || Plugin.Instance.Config.UseBlockLimitsPlugin) &&
-            BlockLimitsPluginBridge.TryCanAdd(blocks, newAuthor.IdentityId, out bool allowed, out List<MySlimBlock> deniedBlocks))
+        if (
+            (
+                BlockLimitsPluginBridge.IsAvailableAndEnabled()
+                || Plugin.Instance.Config.UseBlockLimitsPlugin
+            )
+            && BlockLimitsPluginBridge.TryCanAdd(
+                blocks,
+                newAuthor.IdentityId,
+                out bool allowed,
+                out List<MySlimBlock> deniedBlocks
+            )
+        )
         {
             if (allowed)
             {
@@ -189,7 +224,9 @@ public sealed class PcuTransferCore
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"Player '{newAuthor.DisplayName}' does not satisfy BlockLimits Plugin limits!");
+            sb.AppendLine(
+                $"Player '{newAuthor.DisplayName}' does not satisfy BlockLimits Plugin limits!"
+            );
             foreach (MySlimBlock deniedBlock in deniedBlocks)
                 sb.AppendLine(deniedBlock.BlockDefinition.BlockPairName);
 
@@ -202,7 +239,9 @@ public sealed class PcuTransferCore
         if (!response.BlockLimitFine)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"Player '{newAuthor.DisplayName}' does not have a high enough Blocklimit!");
+            sb.AppendLine(
+                $"Player '{newAuthor.DisplayName}' does not have a high enough Blocklimit!"
+            );
             sb.AppendLine("Max: " + response.BlockLimit);
             sb.AppendLine("Built: " + response.CurrentBlocks);
             sb.AppendLine("After Transfer: " + response.BlockLimitAfterTransfer);
@@ -214,7 +253,9 @@ public sealed class PcuTransferCore
         if (!response.PcuFine)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"Player '{newAuthor.DisplayName}' does not have a high enough PCU limit!");
+            sb.AppendLine(
+                $"Player '{newAuthor.DisplayName}' does not have a high enough PCU limit!"
+            );
             sb.AppendLine("Max: " + response.PcuLimit);
             sb.AppendLine("Built: " + response.CurrentPcu);
             sb.AppendLine("After Transfer: " + response.PcuAfterTransfer);
@@ -226,9 +267,18 @@ public sealed class PcuTransferCore
         if (!response.TypeLimitsFine)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"Player '{newAuthor.DisplayName}' does not have high enough Limit for following Block Types:");
-            foreach (KeyValuePair<Sandbox.Definitions.MyCubeBlockDefinition, int> overLimitBlock in response.OverLimitBlocks)
-                sb.AppendLine(overLimitBlock.Key.BlockPairName + ": " + overLimitBlock.Value + " too many!");
+            sb.AppendLine(
+                $"Player '{newAuthor.DisplayName}' does not have high enough Limit for following Block Types:"
+            );
+            foreach (
+                KeyValuePair<
+                    Sandbox.Definitions.MyCubeBlockDefinition,
+                    int
+                > overLimitBlock in response.OverLimitBlocks
+            )
+                sb.AppendLine(
+                    overLimitBlock.Key.BlockPairName + ": " + overLimitBlock.Value + " too many!"
+                );
 
             sb.AppendLine("Vertified with: Vanilla Limits");
             error = sb.ToString();
@@ -239,7 +289,10 @@ public sealed class PcuTransferCore
         return true;
     }
 
-    private static List<MySlimBlock> GetAllBlocksForGroup(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, MyIdentity newAuthor)
+    private static List<MySlimBlock> GetAllBlocksForGroup(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+        MyIdentity newAuthor
+    )
     {
         long authorId = newAuthor.IdentityId;
         List<MySlimBlock> blocks = new List<MySlimBlock>();
@@ -256,7 +309,11 @@ public sealed class PcuTransferCore
         return blocks;
     }
 
-    private static void TransferBlockOwnership(MyCubeGrid grid, MyCubeBlock cubeBlock, long newOwnerId)
+    private static void TransferBlockOwnership(
+        MyCubeGrid grid,
+        MyCubeBlock cubeBlock,
+        long newOwnerId
+    )
     {
         if (cubeBlock == null || cubeBlock.OwnerId == newOwnerId)
             return;

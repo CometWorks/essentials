@@ -10,8 +10,8 @@ namespace ServerPlugin;
 
 internal static class InfoCommandHandler
 {
-    public static List<string> ConfiguredNames(PluginConfig config)
-        => (config?.InfoCommands ?? new List<InfoCommand>())
+    public static List<string> ConfiguredNames(PluginConfig config) =>
+        (config?.InfoCommands ?? new List<InfoCommand>())
             .Where(HasResponse)
             .Select(command => Name(command.Command))
             .Where(name => name != null)
@@ -36,7 +36,10 @@ internal static class InfoCommandHandler
 
         foreach (InfoCommand command in commands)
         {
-            if (!HasResponse(command) || !string.Equals(Name(command.Command), name, StringComparison.OrdinalIgnoreCase))
+            if (
+                !HasResponse(command)
+                || !string.Equals(Name(command.Command), name, StringComparison.OrdinalIgnoreCase)
+            )
                 continue;
 
             try
@@ -46,8 +49,13 @@ internal static class InfoCommandHandler
             catch (Exception ex)
             {
                 Plugin.Instance?.Log.Warning(ex, "Info command '{0}' failed.", name);
-                try { SendChat("Info command failed. Please tell a server admin.", identityId); }
-                catch { /* The chat transport may be the failing operation. */ }
+                try
+                {
+                    SendChat("Info command failed. Please tell a server admin.", identityId);
+                }
+                catch
+                { /* The chat transport may be the failing operation. */
+                }
             }
             return true;
         }
@@ -58,21 +66,23 @@ internal static class InfoCommandHandler
     private static string Name(string configured)
     {
         string name = configured?.Trim().TrimStart('!');
-        if (string.IsNullOrEmpty(name) ||
-            string.Equals(name, "ess", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(name, "stone", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(name, "help", StringComparison.OrdinalIgnoreCase) ||
-            name.Any(c => !char.IsLetterOrDigit(c) && c != '-' && c != '_'))
+        if (
+            string.IsNullOrEmpty(name)
+            || string.Equals(name, "ess", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "stone", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "help", StringComparison.OrdinalIgnoreCase)
+            || name.Any(c => !char.IsLetterOrDigit(c) && c != '-' && c != '_')
+        )
             return null;
 
         return name;
     }
 
-    private static bool HasResponse(InfoCommand command)
-        => !string.IsNullOrWhiteSpace(command.ChatResponse) ||
-           !string.IsNullOrWhiteSpace(command.NotificationResponse) ||
-           !string.IsNullOrWhiteSpace(command.DialogResponse) ||
-           !string.IsNullOrWhiteSpace(command.URL);
+    private static bool HasResponse(InfoCommand command) =>
+        !string.IsNullOrWhiteSpace(command.ChatResponse)
+        || !string.IsNullOrWhiteSpace(command.NotificationResponse)
+        || !string.IsNullOrWhiteSpace(command.DialogResponse)
+        || !string.IsNullOrWhiteSpace(command.URL);
 
     private static void Respond(InfoCommand command, long identityId, string name)
     {
@@ -84,17 +94,29 @@ internal static class InfoCommandHandler
                 command.NotificationResponse,
                 command.NotificationDurationMs > 0 ? command.NotificationDurationMs : 5000,
                 MyFontEnum.White,
-                identityId);
+                identityId
+            );
 
-        if (!string.IsNullOrWhiteSpace(command.DialogResponse) &&
-            !MissionScreens.ShowToPlayer(identityId, "Information", null, "!" + name, command.DialogResponse, "Close"))
+        if (
+            !string.IsNullOrWhiteSpace(command.DialogResponse)
+            && !MissionScreens.ShowToPlayer(
+                identityId,
+                "Information",
+                null,
+                "!" + name,
+                command.DialogResponse,
+                "Close"
+            )
+        )
             SendChat(command.DialogResponse, identityId);
 
         if (string.IsNullOrWhiteSpace(command.URL))
             return;
 
-        if (!Uri.TryCreate(command.URL.Trim(), UriKind.Absolute, out Uri url) ||
-            (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps))
+        if (
+            !Uri.TryCreate(command.URL.Trim(), UriKind.Absolute, out Uri url)
+            || (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps)
+        )
         {
             SendChat("This info command has an invalid URL.", identityId);
             return;
@@ -104,6 +126,11 @@ internal static class InfoCommandHandler
         MyVisualScriptLogicProvider.OpenSteamOverlay(url.AbsoluteUri, identityId);
     }
 
-    private static void SendChat(string message, long identityId)
-        => MyVisualScriptLogicProvider.SendChatMessage(message, Plugin.Name, identityId, MyFontEnum.White);
+    private static void SendChat(string message, long identityId) =>
+        MyVisualScriptLogicProvider.SendChatMessage(
+            message,
+            Plugin.Name,
+            identityId,
+            MyFontEnum.White
+        );
 }

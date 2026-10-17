@@ -1,8 +1,8 @@
 using System;
 using System.ComponentModel;
-using System.Xml.Serialization;
 using System.IO;
 using System.Threading;
+using System.Xml.Serialization;
 using Shared.Logging;
 
 namespace Shared.Config;
@@ -10,7 +10,8 @@ namespace Shared.Config;
 // Simple class that manages saving plugin configuration to disk using XML serialization.
 // Can automatically save on changes by implementing <see cref="T:System.ComponentModel.INotifyPropertyChanged" /> in the data class.
 /// <typeparam name="T">Data class type</typeparam>
-public class PersistentConfig<T> : IDisposable where T : class, INotifyPropertyChanged, new()
+public class PersistentConfig<T> : IDisposable
+    where T : class, INotifyPropertyChanged, new()
 {
     private T data;
     private Timer saveConfigTimer;
@@ -57,7 +58,10 @@ public class PersistentConfig<T> : IDisposable where T : class, INotifyPropertyC
             {
                 var xmlSerializer = new XmlSerializer(typeof(T));
                 using (var streamReader = File.OpenText(path))
-                    return new PersistentConfig<T>(path, (T)xmlSerializer.Deserialize(streamReader));
+                    return new PersistentConfig<T>(
+                        path,
+                        (T)xmlSerializer.Deserialize(streamReader)
+                    );
             }
         }
         catch (Exception e)

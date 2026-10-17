@@ -29,9 +29,13 @@ public sealed partial class EssentialsModule
         if (string.IsNullOrWhiteSpace(name))
             return "Usage: !ess entities find <name>";
 
-        List<IMyEntity> matches = MyEntities.GetEntities()
+        List<IMyEntity> matches = MyEntities
+            .GetEntities()
             .Cast<IMyEntity>()
-            .Where(entity => EntitySearchName(entity).IndexOf(name, StringComparison.InvariantCultureIgnoreCase) >= 0)
+            .Where(entity =>
+                EntitySearchName(entity).IndexOf(name, StringComparison.InvariantCultureIgnoreCase)
+                >= 0
+            )
             .OrderBy(EntitySearchName)
             .ToList();
 
@@ -70,24 +74,32 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        string operation = "entities delete:" + entity.EntityId.ToString(CultureInfo.InvariantCulture);
-        if (!ConfirmMaintenance(operation, $"This will delete entity '{EntityDisplayName(entity)}' ({entity.EntityId}). Run the same command again within 30 seconds to confirm."))
+        string operation =
+            "entities delete:" + entity.EntityId.ToString(CultureInfo.InvariantCulture);
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will delete entity '{EntityDisplayName(entity)}' ({entity.EntityId}). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         entity.Close();
         Context.Respond($"Entity '{EntityDisplayName(entity)}' deleted.");
-        Plugin.Instance?.Log.Info("Deleted entity {0}: {1}", entity.EntityId, EntityDisplayName(entity));
+        Plugin.Instance?.Log.Info(
+            "Deleted entity {0}: {1}",
+            entity.EntityId,
+            EntityDisplayName(entity)
+        );
     }
 
     [Command("entities poweroff", "Power off generators on a grid.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void EntitiesPowerOff(string name)
-        => SetGridPower(name, enabled: false);
+    public void EntitiesPowerOff(string name) => SetGridPower(name, enabled: false);
 
     [Command("entities poweron", "Power on generators on a grid.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void EntitiesPowerOn(string name)
-        => SetGridPower(name, enabled: true);
+    public void EntitiesPowerOn(string name) => SetGridPower(name, enabled: true);
 
     [Command("entities eject", "Eject one player from a seat, or all seated players with 'all'.")]
     [Permission(MyPromoteLevel.Admin)]
@@ -109,7 +121,9 @@ public sealed partial class EssentialsModule
         if (EjectPlayer(playerName))
             Context.Respond($"Player '{playerName}' ejected.");
         else
-            Context.Respond($"Player '{playerName}' is not online/seated, or could not be found seated offline.");
+            Context.Respond(
+                $"Player '{playerName}' is not online/seated, or could not be found seated offline."
+            );
     }
 
     [Command("grids list", "List grids owned by the caller.")]
@@ -120,7 +134,8 @@ public sealed partial class EssentialsModule
             return "Console cannot list player-owned grids.";
 
         long identityId = Context.Caller.IdentityId;
-        List<MyCubeGrid> grids = MyEntities.GetEntities()
+        List<MyCubeGrid> grids = MyEntities
+            .GetEntities()
             .OfType<MyCubeGrid>()
             .Where(grid => IsActiveRealGrid(grid) && grid.BigOwners.Contains(identityId))
             .OrderBy(grid => grid.DisplayName)
@@ -133,10 +148,13 @@ public sealed partial class EssentialsModule
         sb.AppendLine($"Ships/stations owned by {Utilities.GetPlayerNameById(identityId)}:");
         foreach (MyCubeGrid grid in grids)
         {
-            string position = Plugin.Instance?.Config?.UtilityShowPosition == true
-                ? grid.PositionComp.GetPosition().ToString()
-                : "Unknown";
-            sb.AppendLine($"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s) - Position {position}");
+            string position =
+                Plugin.Instance?.Config?.UtilityShowPosition == true
+                    ? grid.PositionComp.GetPosition().ToString()
+                    : "Unknown";
+            sb.AppendLine(
+                $"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s) - Position {position}"
+            );
             AddGridGps(identityId, grid);
         }
 
@@ -151,14 +169,18 @@ public sealed partial class EssentialsModule
 
         if (string.IsNullOrWhiteSpace(gridName))
         {
-            MyCharacter character = GetCallerCharacter("Console has no Character so cannot use this command. Use !ess grids ejectall <gridname> instead!");
+            MyCharacter character = GetCallerCharacter(
+                "Console has no Character so cannot use this command. Use !ess grids ejectall <gridname> instead!"
+            );
             if (character == null)
                 return;
 
             groups = GridGroupFinder.FindLookAtMechanicalGridGroup(character);
             if (groups.Count == 0)
             {
-                Context.Respond("No grid in your line of sight found. Remember to not use spectator.");
+                Context.Respond(
+                    "No grid in your line of sight found. Remember to not use spectator."
+                );
                 return;
             }
         }
@@ -187,7 +209,9 @@ public sealed partial class EssentialsModule
     public string GridsStopAll()
     {
         int count = 0;
-        foreach (MyCubeGrid grid in MyEntities.GetEntities().OfType<MyCubeGrid>().Where(IsActiveRealGrid))
+        foreach (
+            MyCubeGrid grid in MyEntities.GetEntities().OfType<MyCubeGrid>().Where(IsActiveRealGrid)
+        )
         {
             if (grid.Physics == null)
                 continue;
@@ -203,9 +227,12 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.SpaceMaster)]
     public void GridsStaticLarge()
     {
-        List<MyCubeGrid> grids = MyEntities.GetEntities()
+        List<MyCubeGrid> grids = MyEntities
+            .GetEntities()
             .OfType<MyCubeGrid>()
-            .Where(grid => IsActiveRealGrid(grid) && grid.GridSizeEnum == MyCubeSize.Large && !grid.IsStatic)
+            .Where(grid =>
+                IsActiveRealGrid(grid) && grid.GridSizeEnum == MyCubeSize.Large && !grid.IsStatic
+            )
             .ToList();
 
         if (grids.Count == 0)
@@ -214,7 +241,12 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        if (!ConfirmMaintenance("grids static large", $"This will convert {grids.Count:#,##0} large ship grid(s) to stations. Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                "grids static large",
+                $"This will convert {grids.Count:#,##0} large ship grid(s) to stations. Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int count = 0;
@@ -233,7 +265,9 @@ public sealed partial class EssentialsModule
         if (string.IsNullOrWhiteSpace(name))
         {
             entity = null;
-            Context.Respond("Usage: !ess entities <find|stop|delete|poweroff|poweron|eject> <name>");
+            Context.Respond(
+                "Usage: !ess entities <find|stop|delete|poweroff|poweron|eject> <name>"
+            );
             return false;
         }
 
@@ -281,14 +315,16 @@ public sealed partial class EssentialsModule
         }
 
         string state = enabled ? "Enabled" : "Disabled";
-        Context.Respond($"{state} {changed:#,##0} of {blocks.Count:#,##0} power block(s) on '{grid.DisplayName}'.");
+        Context.Respond(
+            $"{state} {changed:#,##0} of {blocks.Count:#,##0} power block(s) on '{grid.DisplayName}'."
+        );
     }
 
-    private static bool IsPowerProducer(MyFunctionalBlock block)
-        => block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Reactor) ||
-           block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_BatteryBlock) ||
-           block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_SolarPanel) ||
-           block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_FueledPowerProducer);
+    private static bool IsPowerProducer(MyFunctionalBlock block) =>
+        block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Reactor)
+        || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_BatteryBlock)
+        || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_SolarPanel)
+        || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_FueledPowerProducer);
 
     private static int EjectAllSeatedPlayers()
     {
@@ -321,7 +357,14 @@ public sealed partial class EssentialsModule
         foreach (MyShipController controller in AllShipControllers())
         {
             MyCharacter pilot = controller.Pilot;
-            if (pilot == null || !string.Equals(pilot.DisplayName, playerName, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                pilot == null
+                || !string.Equals(
+                    pilot.DisplayName,
+                    playerName,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
                 continue;
 
             controller.Use();
@@ -331,12 +374,18 @@ public sealed partial class EssentialsModule
         return false;
     }
 
-    private static int EjectGridGroupPilots(MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group)
+    private static int EjectGridGroupPilots(
+        MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group
+    )
     {
         int count = 0;
         foreach (MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Node node in group.Nodes)
         {
-            foreach (MyShipController controller in node.NodeData.GetFatBlocks().OfType<MyShipController>())
+            foreach (
+                MyShipController controller in node
+                    .NodeData.GetFatBlocks()
+                    .OfType<MyShipController>()
+            )
             {
                 if (controller.Pilot == null)
                     continue;
@@ -349,14 +398,19 @@ public sealed partial class EssentialsModule
         return count;
     }
 
-    private static IEnumerable<MyShipController> AllShipControllers()
-        => MyEntities.GetEntities()
+    private static IEnumerable<MyShipController> AllShipControllers() =>
+        MyEntities
+            .GetEntities()
             .OfType<MyCubeGrid>()
             .Where(IsActiveRealGrid)
             .SelectMany(grid => grid.GetFatBlocks().OfType<MyShipController>());
 
-    private static bool IsActiveRealGrid(MyCubeGrid grid)
-        => grid != null && grid.Projector == null && !grid.MarkedForClose && !grid.MarkedAsTrash && grid.InScene;
+    private static bool IsActiveRealGrid(MyCubeGrid grid) =>
+        grid != null
+        && grid.Projector == null
+        && !grid.MarkedForClose
+        && !grid.MarkedAsTrash
+        && grid.InScene;
 
     private static string EntitySearchName(IMyEntity entity)
     {
@@ -366,8 +420,10 @@ public sealed partial class EssentialsModule
         return EntityDisplayName(entity);
     }
 
-    private static string EntityDisplayName(IMyEntity entity)
-        => string.IsNullOrWhiteSpace(entity?.DisplayName) ? entity?.EntityId.ToString(CultureInfo.InvariantCulture) ?? "<null>" : entity.DisplayName;
+    private static string EntityDisplayName(IMyEntity entity) =>
+        string.IsNullOrWhiteSpace(entity?.DisplayName)
+            ? entity?.EntityId.ToString(CultureInfo.InvariantCulture) ?? "<null>"
+            : entity.DisplayName;
 
     private static void AddGridGps(long identityId, MyCubeGrid grid)
     {
@@ -378,7 +434,8 @@ public sealed partial class EssentialsModule
             grid.DisplayName,
             $"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s)",
             grid.PositionComp.GetPosition(),
-            true);
+            true
+        );
 
         if (gps != null)
             MyAPIGateway.Session?.GPS.AddGps(identityId, gps);

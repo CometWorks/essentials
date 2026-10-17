@@ -42,7 +42,8 @@ public sealed partial class EssentialsModule
             null,
             MySession.Static?.Name ?? "Essentials",
             motd,
-            "Close");
+            "Close"
+        );
 
         return opened ? "MOTD opened." : "Mission screen unavailable. MOTD:\n" + motd;
     }
@@ -54,22 +55,36 @@ public sealed partial class EssentialsModule
         MySession session = MySession.Static;
         Process process = Process.GetCurrentProcess();
         int entities = MyEntities.GetEntities().Count();
-        int grids = MyEntities.GetEntities().OfType<MyCubeGrid>().Count(grid => grid.Projector == null);
+        int grids = MyEntities
+            .GetEntities()
+            .OfType<MyCubeGrid>()
+            .Count(grid => grid.Projector == null);
         int floatingObjects = MyEntities.GetEntities().OfType<MyFloatingObject>().Count();
         int onlinePlayers = Utilities.GetOnlinePlayerCount();
-        int maxPlayers = MyMultiplayer.Static != null ? MyMultiplayer.Static.MemberLimit : session?.MaxPlayers ?? 0;
+        int maxPlayers =
+            MyMultiplayer.Static != null
+                ? MyMultiplayer.Static.MemberLimit
+                : session?.MaxPlayers ?? 0;
         TimeSpan processUptime = DateTime.UtcNow - process.StartTime.ToUniversalTime();
 
         StringBuilder sb = new StringBuilder();
         sb.AppendLine("Server stats:");
         sb.AppendLine($"World: {session?.Name ?? "Unknown"}");
         sb.AppendLine($"Players: {onlinePlayers:#,##0}/{maxPlayers:#,##0}");
-        sb.AppendLine($"Sim speed: server {session?.SessionSimSpeedServer ?? 0f:0.00}, player {session?.SessionSimSpeedPlayer ?? 0f:0.00}");
-        sb.AppendLine($"Entities: {entities:#,##0} total, {grids:#,##0} grids, {floatingObjects:#,##0} floating objects");
-        sb.AppendLine($"PCU: {session?.TotalSessionPCU ?? 0:#,##0} session / {session?.TotalPCU ?? 0:#,##0} limit");
+        sb.AppendLine(
+            $"Sim speed: server {session?.SessionSimSpeedServer ?? 0f:0.00}, player {session?.SessionSimSpeedPlayer ?? 0f:0.00}"
+        );
+        sb.AppendLine(
+            $"Entities: {entities:#,##0} total, {grids:#,##0} grids, {floatingObjects:#,##0} floating objects"
+        );
+        sb.AppendLine(
+            $"PCU: {session?.TotalSessionPCU ?? 0:#,##0} session / {session?.TotalPCU ?? 0:#,##0} limit"
+        );
         sb.AppendLine($"Game time: {FormatDuration(session?.ElapsedGameTime ?? TimeSpan.Zero)}");
         sb.AppendLine($"Process uptime: {FormatDuration(processUptime)}");
-        sb.AppendLine($"Memory: {FormatBytes(process.WorkingSet64)} working set, {FormatBytes(GC.GetTotalMemory(false))} managed");
+        sb.AppendLine(
+            $"Memory: {FormatBytes(process.WorkingSet64)} working set, {FormatBytes(GC.GetTotalMemory(false))} managed"
+        );
         return sb.ToString();
     }
 
@@ -77,7 +92,8 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public string PlayerList()
     {
-        List<MyPlayer> players = Utilities.GetOnlinePlayers()
+        List<MyPlayer> players = Utilities
+            .GetOnlinePlayers()
             .OrderBy(player => player.DisplayName)
             .ToList();
 
@@ -110,7 +126,12 @@ public sealed partial class EssentialsModule
         DateTime? expires = minutes > 0 ? DateTime.UtcNow.AddMinutes(minutes) : null;
         ChatMuteService.Mute(lookup.SteamId, lookup.IdentityId, lookup.DisplayName, expires);
 
-        Plugin.Instance?.Log.Info("Muted chat for {0} ({1}) until {2}", lookup.DisplayName, lookup.SteamId, expires?.ToString("O", CultureInfo.InvariantCulture) ?? "forever");
+        Plugin.Instance?.Log.Info(
+            "Muted chat for {0} ({1}) until {2}",
+            lookup.DisplayName,
+            lookup.SteamId,
+            expires?.ToString("O", CultureInfo.InvariantCulture) ?? "forever"
+        );
         return minutes > 0
             ? $"Muted user {lookup.DisplayName} for {minutes:#,##0} minute(s)."
             : $"Muted user {lookup.DisplayName} indefinitely.";
@@ -149,17 +170,19 @@ public sealed partial class EssentialsModule
 
     [Command("msg", "Message another online player.")]
     [Permission(MyPromoteLevel.None)]
-    public void Message(string player, params string[] words)
-        => PrivateMessage(player, words);
+    public void Message(string player, params string[] words) => PrivateMessage(player, words);
 
     [Command("whis", "Message another online player.")]
     [Permission(MyPromoteLevel.None)]
-    public void Whisper(string player, params string[] words)
-        => PrivateMessage(player, words);
+    public void Whisper(string player, params string[] words) => PrivateMessage(player, words);
 
     private void PrivateMessage(string player, string[] words)
     {
-        if (Context.Caller.IsConsole || Context.Caller.IdentityId == 0 || Context.Caller.SteamId == 0)
+        if (
+            Context.Caller.IsConsole
+            || Context.Caller.IdentityId == 0
+            || Context.Caller.SteamId == 0
+        )
         {
             Context.Respond("Only players can use this command.");
             return;
@@ -200,14 +223,16 @@ public sealed partial class EssentialsModule
             Color.MediumPurple,
             "PM from " + senderName,
             targetIdentityId,
-            MyFontEnum.White);
+            MyFontEnum.White
+        );
 
         MyVisualScriptLogicProvider.SendChatMessageColored(
             message,
             Color.MediumPurple,
             "PM to " + targetName,
             Context.Caller.IdentityId,
-            MyFontEnum.White);
+            MyFontEnum.White
+        );
     }
 
     private static string BuildMotdBody()
@@ -237,13 +262,16 @@ public sealed partial class EssentialsModule
         if (string.IsNullOrWhiteSpace(value))
             return false;
 
-        if (Utilities.GetPlayerByNameOrId(value) is MyPlayer onlinePlayer && onlinePlayer.Id.SteamId != 0)
+        if (
+            Utilities.GetPlayerByNameOrId(value) is MyPlayer onlinePlayer
+            && onlinePlayer.Id.SteamId != 0
+        )
         {
             lookup = new PlayerLookup
             {
                 SteamId = onlinePlayer.Id.SteamId,
                 IdentityId = onlinePlayer.Identity?.IdentityId ?? 0,
-                DisplayName = onlinePlayer.DisplayName
+                DisplayName = onlinePlayer.DisplayName,
             };
             return true;
         }
@@ -258,21 +286,33 @@ public sealed partial class EssentialsModule
             {
                 SteamId = steamId,
                 IdentityId = identity.IdentityId,
-                DisplayName = identity.DisplayName
+                DisplayName = identity.DisplayName,
             };
             return true;
         }
 
-        if (!ulong.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out ulong parsedSteamId) || parsedSteamId == 0)
+        if (
+            !ulong.TryParse(
+                value,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out ulong parsedSteamId
+            )
+            || parsedSteamId == 0
+        )
             return false;
 
         long identityId = MySession.Static?.Players?.TryGetIdentityId(parsedSteamId) ?? 0;
-        string displayName = MySession.Static?.Players?.TryGetIdentityNameFromSteamId(parsedSteamId);
+        string displayName = MySession.Static?.Players?.TryGetIdentityNameFromSteamId(
+            parsedSteamId
+        );
         lookup = new PlayerLookup
         {
             SteamId = parsedSteamId,
             IdentityId = identityId,
-            DisplayName = string.IsNullOrWhiteSpace(displayName) ? parsedSteamId.ToString(CultureInfo.InvariantCulture) : displayName
+            DisplayName = string.IsNullOrWhiteSpace(displayName)
+                ? parsedSteamId.ToString(CultureInfo.InvariantCulture)
+                : displayName,
         };
         return true;
     }
@@ -283,8 +323,21 @@ public sealed partial class EssentialsModule
             span = TimeSpan.Zero;
 
         return span.TotalDays >= 1
-            ? string.Format(CultureInfo.InvariantCulture, "{0:#,##0}d {1:00}:{2:00}:{3:00}", (int)span.TotalDays, span.Hours, span.Minutes, span.Seconds)
-            : string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}", span.Hours, span.Minutes, span.Seconds);
+            ? string.Format(
+                CultureInfo.InvariantCulture,
+                "{0:#,##0}d {1:00}:{2:00}:{3:00}",
+                (int)span.TotalDays,
+                span.Hours,
+                span.Minutes,
+                span.Seconds
+            )
+            : string.Format(
+                CultureInfo.InvariantCulture,
+                "{0:00}:{1:00}:{2:00}",
+                span.Hours,
+                span.Minutes,
+                span.Seconds
+            );
     }
 
     private static string FormatBytes(long bytes)

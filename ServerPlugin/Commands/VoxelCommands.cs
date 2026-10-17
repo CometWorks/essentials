@@ -22,12 +22,15 @@ public sealed partial class EssentialsModule
     public string VoxelsProtectStatus()
     {
         var config = Plugin.Instance.PluginConfig;
-        return $"Voxel protection: missiles {ProtectionState(config.ProtectVoxelsFromMissiles)}, " +
-               $"meteors {ProtectionState(config.ProtectVoxelsFromMeteors)}, " +
-               $"grid collisions {ProtectionState(config.ProtectVoxelsFromGridCollisions)}.";
+        return $"Voxel protection: missiles {ProtectionState(config.ProtectVoxelsFromMissiles)}, "
+            + $"meteors {ProtectionState(config.ProtectVoxelsFromMeteors)}, "
+            + $"grid collisions {ProtectionState(config.ProtectVoxelsFromGridCollisions)}.";
     }
 
-    [Command("voxels protect missiles", "Enable or disable protection from missile voxel deformation.")]
+    [Command(
+        "voxels protect missiles",
+        "Enable or disable protection from missile voxel deformation."
+    )]
     [Permission(MyPromoteLevel.Admin)]
     public string VoxelsProtectMissiles(bool enabled)
     {
@@ -35,7 +38,10 @@ public sealed partial class EssentialsModule
         return $"Missile voxel protection {ProtectionState(enabled)}.";
     }
 
-    [Command("voxels protect meteors", "Enable or disable protection from meteor voxel deformation.")]
+    [Command(
+        "voxels protect meteors",
+        "Enable or disable protection from meteor voxel deformation."
+    )]
     [Permission(MyPromoteLevel.Admin)]
     public string VoxelsProtectMeteors(bool enabled)
     {
@@ -43,7 +49,10 @@ public sealed partial class EssentialsModule
         return $"Meteor voxel protection {ProtectionState(enabled)}.";
     }
 
-    [Command("voxels protect collisions", "Enable or disable protection from grid collision voxel deformation.")]
+    [Command(
+        "voxels protect collisions",
+        "Enable or disable protection from grid collision voxel deformation."
+    )]
     [Permission(MyPromoteLevel.Admin)]
     public string VoxelsProtectCollisions(bool enabled)
     {
@@ -57,7 +66,8 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public void VoxelsResetAll()
     {
-        List<MyVoxelBase> voxels = MyEntities.GetEntities()
+        List<MyVoxelBase> voxels = MyEntities
+            .GetEntities()
             .OfType<MyVoxelBase>()
             .Where(IsResettableVoxel)
             .GroupBy(voxel => voxel.EntityId)
@@ -74,19 +84,29 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public void VoxelsCleanupAsteroids()
     {
-        List<MyVoxelMap> maps = MyEntities.GetEntities()
+        List<MyVoxelMap> maps = MyEntities
+            .GetEntities()
             .OfType<MyVoxelMap>()
             .Where(IsResettableVoxel)
             .Where(map => !HasGridOrCharacterNear(map.PositionComp.WorldVolume))
             .ToList();
 
-        if (!ConfirmVoxelReset("voxels cleanup asteroids", maps.Cast<MyVoxelBase>().ToList(), "asteroid voxel map(s)"))
+        if (
+            !ConfirmVoxelReset(
+                "voxels cleanup asteroids",
+                maps.Cast<MyVoxelBase>().ToList(),
+                "asteroid voxel map(s)"
+            )
+        )
             return;
 
         ResetVoxelStorages(maps.Cast<MyVoxelBase>().ToList(), "unused asteroids");
     }
 
-    [Command("voxels cleanup distant", "Reset asteroids without grids or players inside the radius.")]
+    [Command(
+        "voxels cleanup distant",
+        "Reset asteroids without grids or players inside the radius."
+    )]
     [Permission(MyPromoteLevel.Admin)]
     public void VoxelsCleanupDistant(double distance = 1000)
     {
@@ -96,14 +116,26 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        List<MyVoxelMap> maps = MyEntities.GetEntities()
+        List<MyVoxelMap> maps = MyEntities
+            .GetEntities()
             .OfType<MyVoxelMap>()
             .Where(IsResettableVoxel)
-            .Where(map => !HasGridOrCharacterNear(new BoundingSphereD(map.PositionComp.GetPosition(), distance)))
+            .Where(map =>
+                !HasGridOrCharacterNear(
+                    new BoundingSphereD(map.PositionComp.GetPosition(), distance)
+                )
+            )
             .ToList();
 
-        string operation = "voxels cleanup distant:" + distance.ToString("R", CultureInfo.InvariantCulture);
-        if (!ConfirmVoxelReset(operation, maps.Cast<MyVoxelBase>().ToList(), "distant asteroid voxel map(s)"))
+        string operation =
+            "voxels cleanup distant:" + distance.ToString("R", CultureInfo.InvariantCulture);
+        if (
+            !ConfirmVoxelReset(
+                operation,
+                maps.Cast<MyVoxelBase>().ToList(),
+                "distant asteroid voxel map(s)"
+            )
+        )
             return;
 
         ResetVoxelStorages(maps.Cast<MyVoxelBase>().ToList(), "distant asteroids");
@@ -113,12 +145,19 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public void VoxelsResetPlanets()
     {
-        List<MyPlanet> planets = MyEntities.GetEntities()
+        List<MyPlanet> planets = MyEntities
+            .GetEntities()
             .OfType<MyPlanet>()
             .Where(IsResettableVoxel)
             .ToList();
 
-        if (!ConfirmVoxelReset("voxels reset planets", planets.Cast<MyVoxelBase>().ToList(), "planet(s)"))
+        if (
+            !ConfirmVoxelReset(
+                "voxels reset planets",
+                planets.Cast<MyVoxelBase>().ToList(),
+                "planet(s)"
+            )
+        )
             return;
 
         ResetVoxelStorages(planets.Cast<MyVoxelBase>().ToList(), "planets");
@@ -134,10 +173,14 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        List<MyPlanet> planets = MyEntities.GetEntities()
+        List<MyPlanet> planets = MyEntities
+            .GetEntities()
             .OfType<MyPlanet>()
             .Where(IsResettableVoxel)
-            .Where(planet => VoxelName(planet).IndexOf(planetName, StringComparison.InvariantCultureIgnoreCase) >= 0)
+            .Where(planet =>
+                VoxelName(planet).IndexOf(planetName, StringComparison.InvariantCultureIgnoreCase)
+                >= 0
+            )
             .OrderBy(VoxelName)
             .ToList();
 
@@ -147,11 +190,16 @@ public sealed partial class EssentialsModule
                 Context.Respond($"Could not find planet matching '{planetName}'.");
                 return;
             case 1:
-                string operation = "voxels reset planet:" + planets[0].EntityId.ToString(CultureInfo.InvariantCulture);
+                string operation =
+                    "voxels reset planet:"
+                    + planets[0].EntityId.ToString(CultureInfo.InvariantCulture);
                 if (!ConfirmVoxelReset(operation, planets.Cast<MyVoxelBase>().ToList(), "planet"))
                     return;
 
-                ResetVoxelStorages(planets.Cast<MyVoxelBase>().ToList(), "planet " + VoxelName(planets[0]));
+                ResetVoxelStorages(
+                    planets.Cast<MyVoxelBase>().ToList(),
+                    "planet " + VoxelName(planets[0])
+                );
                 return;
             default:
                 StringBuilder sb = new StringBuilder();
@@ -174,7 +222,9 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        MyCharacter character = GetCallerCharacter("Console cannot use this command. Use !ess voxels reset gps <x> <y> <z> <radius>.");
+        MyCharacter character = GetCallerCharacter(
+            "Console cannot use this command. Use !ess voxels reset gps <x> <y> <z> <radius>."
+        );
         if (character == null)
             return;
 
@@ -198,7 +248,8 @@ public sealed partial class EssentialsModule
     private void ResetVoxelAreaAt(Vector3D center, float radius, string command)
     {
         BoundingSphereD sphere = new BoundingSphereD(center, radius);
-        List<MyVoxelBase> voxels = MyEntities.GetEntitiesInSphere(ref sphere)
+        List<MyVoxelBase> voxels = MyEntities
+            .GetEntitiesInSphere(ref sphere)
             .OfType<MyVoxelBase>()
             .Where(voxel => voxel != null && !voxel.MarkedForClose)
             .Select(voxel => voxel.RootVoxel ?? voxel)
@@ -220,8 +271,14 @@ public sealed partial class EssentialsModule
             center.X,
             center.Y,
             center.Z,
-            radius);
-        if (!ConfirmMaintenance(operation, $"This will reset voxel damage on {voxels.Count:#,##0} voxel map(s). Run the same command again within 30 seconds to confirm."))
+            radius
+        );
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will reset voxel damage on {voxels.Count:#,##0} voxel map(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int count = 0;
@@ -229,17 +286,18 @@ public sealed partial class EssentialsModule
         {
             try
             {
-                MyShapeSphere shape = new MyShapeSphere
-                {
-                    Center = center,
-                    Radius = radius
-                };
+                MyShapeSphere shape = new MyShapeSphere { Center = center, Radius = radius };
                 MyVoxelGenerator.RevertShape(voxel, shape);
                 count++;
             }
             catch (Exception ex)
             {
-                Plugin.Instance?.Log.Warning(ex, "Failed to reset voxel area on {0} ({1})", VoxelName(voxel), voxel.EntityId);
+                Plugin.Instance?.Log.Warning(
+                    ex,
+                    "Failed to reset voxel area on {0} ({1})",
+                    VoxelName(voxel),
+                    voxel.EntityId
+                );
             }
         }
 
@@ -250,7 +308,8 @@ public sealed partial class EssentialsModule
             center.Y,
             center.Z,
             radius,
-            count);
+            count
+        );
     }
 
     private bool ConfirmVoxelReset(string operation, IReadOnlyList<MyVoxelBase> voxels, string noun)
@@ -261,7 +320,10 @@ public sealed partial class EssentialsModule
             return false;
         }
 
-        return ConfirmMaintenance(operation, $"This will reset {voxels.Count:#,##0} {noun}. Run the same command again within 30 seconds to confirm.");
+        return ConfirmMaintenance(
+            operation,
+            $"This will reset {voxels.Count:#,##0} {noun}. Run the same command again within 30 seconds to confirm."
+        );
     }
 
     private void ResetVoxelStorages(IReadOnlyList<MyVoxelBase> voxels, string operation)
@@ -279,7 +341,12 @@ public sealed partial class EssentialsModule
             }
             catch (Exception ex)
             {
-                Plugin.Instance?.Log.Warning(ex, "Failed to reset voxel {0} ({1})", VoxelName(voxel), voxel.EntityId);
+                Plugin.Instance?.Log.Warning(
+                    ex,
+                    "Failed to reset voxel {0} ({1})",
+                    VoxelName(voxel),
+                    voxel.EntityId
+                );
             }
         }
 
@@ -287,12 +354,12 @@ public sealed partial class EssentialsModule
         Plugin.Instance?.Log.Info("Reset {0} voxel map(s) for {1}", count, operation);
     }
 
-    private static bool IsResettableVoxel(MyVoxelBase voxel)
-        => voxel != null &&
-           !voxel.MarkedForClose &&
-           voxel.RootVoxel == voxel &&
-           !string.IsNullOrWhiteSpace(voxel.StorageName) &&
-           voxel.Storage?.DataProvider != null;
+    private static bool IsResettableVoxel(MyVoxelBase voxel) =>
+        voxel != null
+        && !voxel.MarkedForClose
+        && voxel.RootVoxel == voxel
+        && !string.IsNullOrWhiteSpace(voxel.StorageName)
+        && voxel.Storage?.DataProvider != null;
 
     private static bool HasGridOrCharacterNear(BoundingSphereD sphere)
     {

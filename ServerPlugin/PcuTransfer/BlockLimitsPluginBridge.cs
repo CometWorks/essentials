@@ -14,18 +14,32 @@ public static class BlockLimitsPluginBridge
         if (apiType == null)
             return false;
 
-        PropertyInfo enabledProperty = apiType.GetProperty("Enabled", BindingFlags.Public | BindingFlags.Static);
+        PropertyInfo enabledProperty = apiType.GetProperty(
+            "Enabled",
+            BindingFlags.Public | BindingFlags.Static
+        );
         if (enabledProperty?.PropertyType == typeof(bool))
             return (bool)enabledProperty.GetValue(null);
 
-        MethodInfo enabledMethod = apiType.GetMethod("IsEnabled", BindingFlags.Public | BindingFlags.Static, null, Type.EmptyTypes, null);
+        MethodInfo enabledMethod = apiType.GetMethod(
+            "IsEnabled",
+            BindingFlags.Public | BindingFlags.Static,
+            null,
+            Type.EmptyTypes,
+            null
+        );
         if (enabledMethod?.ReturnType == typeof(bool))
             return (bool)enabledMethod.Invoke(null, null);
 
         return true;
     }
 
-    public static bool TryCanAdd(List<MySlimBlock> blocks, long identityId, out bool allowed, out List<MySlimBlock> deniedBlocks)
+    public static bool TryCanAdd(
+        List<MySlimBlock> blocks,
+        long identityId,
+        out bool allowed,
+        out List<MySlimBlock> deniedBlocks
+    )
     {
         allowed = true;
         deniedBlocks = null;
@@ -42,10 +56,10 @@ public static class BlockLimitsPluginBridge
                     return false;
 
                 ParameterInfo[] parameters = method.GetParameters();
-                return parameters.Length == 3 &&
-                       parameters[0].ParameterType == typeof(List<MySlimBlock>) &&
-                       parameters[1].ParameterType == typeof(long) &&
-                       parameters[2].IsOut;
+                return parameters.Length == 3
+                    && parameters[0].ParameterType == typeof(List<MySlimBlock>)
+                    && parameters[1].ParameterType == typeof(long)
+                    && parameters[2].IsOut;
             });
 
         if (canAdd == null)
@@ -57,9 +71,11 @@ public static class BlockLimitsPluginBridge
         return true;
     }
 
-    private static Type FindApiType()
-        => AppDomain.CurrentDomain
-            .GetAssemblies()
-            .Select(assembly => assembly.GetType("BlockLimits.PluginApi.Limits", throwOnError: false))
+    private static Type FindApiType() =>
+        AppDomain
+            .CurrentDomain.GetAssemblies()
+            .Select(assembly =>
+                assembly.GetType("BlockLimits.PluginApi.Limits", throwOnError: false)
+            )
             .FirstOrDefault(type => type != null);
 }

@@ -13,9 +13,16 @@ internal static class HomeStore
     private static readonly object Sync = new object();
     private static HomeStoreData data;
 
-    private static string Path => System.IO.Path.Combine(MyFileSystem.UserDataPath, "Essentials.Homes.xml");
+    private static string Path =>
+        System.IO.Path.Combine(MyFileSystem.UserDataPath, "Essentials.Homes.xml");
 
-    public static bool TryAdd(ulong steamId, string name, Vector3D position, int maxHomes, out string error)
+    public static bool TryAdd(
+        ulong steamId,
+        string name,
+        Vector3D position,
+        int maxHomes,
+        out string error
+    )
     {
         error = null;
         name = NormalizeName(name);
@@ -40,13 +47,15 @@ internal static class HomeStore
                 return false;
             }
 
-            player.Homes.Add(new HomeLocation
-            {
-                Name = name,
-                X = position.X,
-                Y = position.Y,
-                Z = position.Z
-            });
+            player.Homes.Add(
+                new HomeLocation
+                {
+                    Name = name,
+                    X = position.X,
+                    Y = position.Y,
+                    Z = position.Z,
+                }
+            );
 
             Save();
             return true;
@@ -62,7 +71,9 @@ internal static class HomeStore
             if (player == null)
                 return false;
 
-            HomeLocation home = player.Homes.FirstOrDefault(candidate => SameHomeName(candidate.Name, name));
+            HomeLocation home = player.Homes.FirstOrDefault(candidate =>
+                SameHomeName(candidate.Name, name)
+            );
             if (home == null)
                 return false;
 
@@ -77,7 +88,8 @@ internal static class HomeStore
         lock (Sync)
         {
             HomePlayerRecord player = FindPlayer(steamId);
-            return player?.Homes.Select(home => home.Name).OrderBy(name => name).ToList() ?? new List<string>();
+            return player?.Homes.Select(home => home.Name).OrderBy(name => name).ToList()
+                ?? new List<string>();
         }
     }
 
@@ -86,7 +98,8 @@ internal static class HomeStore
         name = NormalizeName(name);
         lock (Sync)
         {
-            HomeLocation home = FindPlayer(steamId)?.Homes.FirstOrDefault(candidate => SameHomeName(candidate.Name, name));
+            HomeLocation home = FindPlayer(steamId)
+                ?.Homes.FirstOrDefault(candidate => SameHomeName(candidate.Name, name));
             if (home != null)
             {
                 position = new Vector3D(home.X, home.Y, home.Z);
@@ -157,11 +170,10 @@ internal static class HomeStore
         }
     }
 
-    private static string NormalizeName(string name)
-        => name?.Trim();
+    private static string NormalizeName(string name) => name?.Trim();
 
-    private static bool SameHomeName(string left, string right)
-        => string.Equals(left, right, StringComparison.InvariantCultureIgnoreCase);
+    private static bool SameHomeName(string left, string right) =>
+        string.Equals(left, right, StringComparison.InvariantCultureIgnoreCase);
 }
 
 [XmlRoot("Homes")]

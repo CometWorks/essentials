@@ -16,13 +16,11 @@ public sealed partial class EssentialsModule
 {
     [Command("pcu checkowner", "Checks block ownership on a grid.")]
     [Permission(MyPromoteLevel.Moderator)]
-    public string CheckOwner(string gridName = null)
-        => CheckGrid(gridName, showAuthors: false);
+    public string CheckOwner(string gridName = null) => CheckGrid(gridName, showAuthors: false);
 
     [Command("pcu checkauthor", "Checks PCU authorship on a grid.")]
     [Permission(MyPromoteLevel.Moderator)]
-    public string CheckAuthor(string gridName = null)
-        => CheckGrid(gridName, showAuthors: true);
+    public string CheckAuthor(string gridName = null) => CheckGrid(gridName, showAuthors: true);
 
     private string CheckGrid(string gridName, bool showAuthors)
     {
@@ -41,7 +39,13 @@ public sealed partial class EssentialsModule
             groups = GridGroupFinder.FindLookAtGridGroup(character);
         }
 
-        if (!TryGetSingleGroup(groups, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        if (
+            !TryGetSingleGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         return showAuthors ? BuildAuthorReport(group) : BuildOwnerReport(group);
@@ -50,7 +54,8 @@ public sealed partial class EssentialsModule
     private static bool TryGetSingleGroup(
         ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups,
         out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
-        out string error)
+        out string error
+    )
     {
         if (groups.Count < 1)
         {
@@ -76,7 +81,9 @@ public sealed partial class EssentialsModule
         return true;
     }
 
-    private static string BuildOwnerReport(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group)
+    private static string BuildOwnerReport(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group
+    )
     {
         StringBuilder sb = new StringBuilder();
 
@@ -93,18 +100,26 @@ public sealed partial class EssentialsModule
                     continue;
 
                 long ownerId = block.FatBlock.OwnerId;
-                blocksByOwner[ownerId] = blocksByOwner.TryGetValue(ownerId, out int count) ? count + 1 : 1;
+                blocksByOwner[ownerId] = blocksByOwner.TryGetValue(ownerId, out int count)
+                    ? count + 1
+                    : 1;
             }
 
             sb.AppendLine("Owners at grid: " + grid.DisplayName);
-            foreach (KeyValuePair<long, int> pair in blocksByOwner.OrderByDescending(pair => pair.Value))
-                sb.AppendLine("   " + Utilities.GetPlayerNameById(pair.Key) + " = " + pair.Value + " blocks");
+            foreach (
+                KeyValuePair<long, int> pair in blocksByOwner.OrderByDescending(pair => pair.Value)
+            )
+                sb.AppendLine(
+                    "   " + Utilities.GetPlayerNameById(pair.Key) + " = " + pair.Value + " blocks"
+                );
         }
 
         return sb.ToString();
     }
 
-    private static string BuildAuthorReport(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group)
+    private static string BuildAuthorReport(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group
+    )
     {
         StringBuilder sb = new StringBuilder();
 
@@ -122,12 +137,18 @@ public sealed partial class EssentialsModule
 
                 int pcu = block.BlockDefinition.PCU;
                 long authorId = block.BuiltBy;
-                pcuByAuthor[authorId] = pcuByAuthor.TryGetValue(authorId, out int total) ? total + pcu : pcu;
+                pcuByAuthor[authorId] = pcuByAuthor.TryGetValue(authorId, out int total)
+                    ? total + pcu
+                    : pcu;
             }
 
             sb.AppendLine("Authors at grid: " + grid.DisplayName);
-            foreach (KeyValuePair<long, int> pair in pcuByAuthor.OrderByDescending(pair => pair.Value))
-                sb.AppendLine("   " + Utilities.GetPlayerNameById(pair.Key) + " = " + pair.Value + " PCU");
+            foreach (
+                KeyValuePair<long, int> pair in pcuByAuthor.OrderByDescending(pair => pair.Value)
+            )
+                sb.AppendLine(
+                    "   " + Utilities.GetPlayerNameById(pair.Key) + " = " + pair.Value + " PCU"
+                );
         }
 
         return sb.ToString();

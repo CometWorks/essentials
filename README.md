@@ -126,6 +126,94 @@ editor UI is rendered by Quasar from the generated schema. See the
 Use the `EnsureCode` attribute on Harmony patch methods to safely skip loading the plugin when patched game code changes after a Space Engineers update.
 The logged hash can be copied back into the attribute after validating a new game version.
 
+## Tests
+
+`tests/` holds an in-game test suite. It starts a Magnetar server with this working copy
+of the plugin, joins it with two headless game clients and drives them through the
+[Remote plugin](https://github.com/CometWorks/remote). Player A is an administrator.
+Player B has no rights and shares a faction with player C, who never joins. The tests
+type the chat commands, read what each client gets back (replies, broadcasts, HUD
+notifications) and check the result on the server: grids, blocks, inventories, balances,
+voxels, identities, factions, and the files the plugin writes. It runs on Linux only.
+
+What it covers:
+
+- Every command against its permission level, read from the source: B is refused
+  everything above None and the refusal reaches only B; B promoted to Moderator,
+  SpaceMaster and Admin (`test_permissions.py`)
+- say, broadcast, notify, save, reload and `!reload` (`test_server_control.py`)
+- Auto commands: runauto, listauto, cancelauto, cancel by index, every step action with
+  delays and shell scripts, the Timed, Scheduled, PlayerCount, GridCount and SimSpeed
+  triggers, and votes (`test_auto_commands.py`)
+- Restart and shutdown sequences, restart and stop at once, the OnStart trigger, config,
+  homes and grids across a restart, and a broken config file (`test_lifecycle.py`)
+- Kick, ban, unban and the MOTD on joining (`test_joining.py`)
+- MOTD, stats, player count and list, the id and name lookups, promote levels, reserved
+  slots, item gifts, chat mutes, private messages and teleports (`test_players.py`)
+- Homes and info commands (`test_homes_info.py`)
+- Every cleanup condition, confirmations, piloted grids, logical groups and floating
+  objects (`test_cleanup.py`)
+- Identity clean, purge and clear, rep wipe, faction clean, remove and info, sandbox
+  clean (`test_world_maintenance.py`)
+- Voxel resets on a procedural asteroid and the missile, meteor and grid collision
+  protection switches (`test_voxels.py`)
+- Blocks on, off and remove by type, subtype and category (`test_blocks.py`)
+- Entities and grids commands, grid conversion, protection, convert, gridtype and
+  `!stone` (`test_grids.py`)
+- Safe zones, GPS signals and NPC economy stations (`test_zones_stations.py`)
+- The economy commands and SpaceCredit items (`test_economy.py`)
+- The ship fixer and its options (`test_shipfixer.py`)
+- PCU and ownership reports, claim, grid sales, rename and transfers (`test_pcu.py`)
+
+Behavior the plugin documents but doesn't have yet, and bugs found by the suite, are
+strict xfails that name their ticket, so a fix shows up as an unexpected pass.
+
+Not covered: mission screens (the MOTD, `!ess help` and dialogs fall back to chat because
+the clients run without MagnetarMod), the Steam overlay URL, planet resets (the test
+world has no planets), PCU transfer limits (block limits are off in the test world), the
+Block Limits plugin bridge and the Quasar config UI.
+
+The test world is the game's Empty World with the test players and the faction, and no
+grids. `tests/probe` is a test-only server plugin the server loads next to Essentials: it
+spawns the grids each test needs (`tests/prefabs.py`), makes identities, factions,
+asteroids and safe zones, reports the state of the world on the server and puts a new
+config into the running plugin. Between tests it resets the world in one command: no grids,
+GPS entries or other characters, the default config, the plugin's cooldowns,
+confirmations, mutes, homes and votes forgotten, and both players at home. So the server
+restarts only in `test_lifecycle.py`.
+
+### Running
+
+You need the Space Engineers client and Dedicated Server from Steam, Magnetar and Pulsar
+installed, [uv](https://docs.astral.sh/uv/), and working copies of
+[Remote](https://github.com/CometWorks/remote) and
+[DirectTransport](https://github.com/CometWorks/direct-transport). The rig takes the
+ports, client ids and folders from a test slot of the `se` workspace
+(`notes/parallel-test-work`), and waits for free memory before each process it starts.
+
+```bash
+uv run pytest -n 6
+```
+
+`-n` is the number of rigs that run side by side, each a server and two clients on a
+slot of its own, with about 5 GB of RAM per rig. The memory guard starts the processes
+20 seconds apart, so the last rig is up after about 6 minutes; the first ones start on
+the tests meanwhile. A full run with `-n 6` takes about 15 minutes on a 32-core machine with
+128 GB of RAM. Without `-n`, one rig runs all the tests in turn.
+
+Where GitHub's API rate limits Magnetar, export `PULSAR_GITHUB_TOKEN` for it to download
+its hub plugins with. `!fixship` with a grid name needs a Magnetar newer than 2.4.3.4.
+
+`tests/rig.py` lists the environment variables that point the rig at other installations
+and working copies. To keep the server and clients running between runs while you work
+on a test:
+
+```bash
+uv run python tests/session.py start
+ES_ATTACH=1 ES_KEEP=1 uv run pytest tests/test_cleanup.py
+uv run python tests/session.py stop
+```
+
 ## Publishing
 
 Register server plugins in [MagnetarHub](https://github.com/viktor-ferenczi/MagnetarHub), so they become available in Magnetar.

@@ -7,7 +7,12 @@ namespace ServerPlugin;
 
 internal sealed class ChatMuteRecord
 {
-    public ChatMuteRecord(ulong steamId, long identityId, string displayName, DateTime? expiresAtUtc)
+    public ChatMuteRecord(
+        ulong steamId,
+        long identityId,
+        string displayName,
+        DateTime? expiresAtUtc
+    )
     {
         SteamId = steamId;
         IdentityId = identityId;
@@ -20,8 +25,7 @@ internal sealed class ChatMuteRecord
     public string DisplayName { get; }
     public DateTime? ExpiresAtUtc { get; }
 
-    public bool IsExpired(DateTime utcNow)
-        => ExpiresAtUtc.HasValue && ExpiresAtUtc.Value <= utcNow;
+    public bool IsExpired(DateTime utcNow) => ExpiresAtUtc.HasValue && ExpiresAtUtc.Value <= utcNow;
 
     public string RemainingText(DateTime utcNow)
     {
@@ -32,21 +36,45 @@ internal sealed class ChatMuteRecord
         return remaining <= TimeSpan.Zero ? "expired" : FormatDuration(remaining);
     }
 
-    private static string FormatDuration(TimeSpan span)
-        => span.TotalDays >= 1
-            ? string.Format(CultureInfo.InvariantCulture, "{0:#,##0}d {1:00}:{2:00}:{3:00}", (int)span.TotalDays, span.Hours, span.Minutes, span.Seconds)
-            : string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}", span.Hours, span.Minutes, span.Seconds);
+    private static string FormatDuration(TimeSpan span) =>
+        span.TotalDays >= 1
+            ? string.Format(
+                CultureInfo.InvariantCulture,
+                "{0:#,##0}d {1:00}:{2:00}:{3:00}",
+                (int)span.TotalDays,
+                span.Hours,
+                span.Minutes,
+                span.Seconds
+            )
+            : string.Format(
+                CultureInfo.InvariantCulture,
+                "{0:00}:{1:00}:{2:00}",
+                span.Hours,
+                span.Minutes,
+                span.Seconds
+            );
 }
 
 internal static class ChatMuteService
 {
     private static readonly object SyncRoot = new object();
-    private static readonly Dictionary<ulong, ChatMuteRecord> MutedPlayers = new Dictionary<ulong, ChatMuteRecord>();
+    private static readonly Dictionary<ulong, ChatMuteRecord> MutedPlayers =
+        new Dictionary<ulong, ChatMuteRecord>();
 
-    public static void Mute(ulong steamId, long identityId, string displayName, DateTime? expiresAtUtc)
+    public static void Mute(
+        ulong steamId,
+        long identityId,
+        string displayName,
+        DateTime? expiresAtUtc
+    )
     {
         lock (SyncRoot)
-            MutedPlayers[steamId] = new ChatMuteRecord(steamId, identityId, displayName, expiresAtUtc);
+            MutedPlayers[steamId] = new ChatMuteRecord(
+                steamId,
+                identityId,
+                displayName,
+                expiresAtUtc
+            );
     }
 
     public static bool Unmute(ulong steamId)
@@ -69,8 +97,8 @@ internal static class ChatMuteService
         lock (SyncRoot)
         {
             CleanupExpiredLocked(DateTime.UtcNow);
-            return MutedPlayers.Values
-                .OrderBy(record => record.DisplayName)
+            return MutedPlayers
+                .Values.OrderBy(record => record.DisplayName)
                 .ThenBy(record => record.SteamId)
                 .ToList();
         }

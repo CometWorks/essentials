@@ -31,8 +31,13 @@ public sealed class AutoCommandExecutor
 
     private readonly CommandDispatcher dispatcher;
     private readonly AutoCommandResponder responder;
-    private readonly CommandCaller serverCaller =
-        new CommandCaller(0UL, 0L, "Server", MyPromoteLevel.Owner, isConsole: true);
+    private readonly CommandCaller serverCaller = new CommandCaller(
+        0UL,
+        0L,
+        "Server",
+        MyPromoteLevel.Owner,
+        isConsole: true
+    );
 
     private readonly List<RunningSequence> running = new();
     private readonly Dictionary<string, ScheduleState> schedules = new();
@@ -148,7 +153,10 @@ public sealed class AutoCommandExecutor
 
             case AutoTrigger.Timed:
             {
-                if (!TryParseSpan(command.Interval, out TimeSpan interval) || interval <= TimeSpan.Zero)
+                if (
+                    !TryParseSpan(command.Interval, out TimeSpan interval)
+                    || interval <= TimeSpan.Zero
+                )
                     return;
 
                 if (!state.Initialized)
@@ -202,7 +210,12 @@ public sealed class AutoCommandExecutor
         }
     }
 
-    private void EvaluateCount(AutoCommand command, ScheduleState state, DateTime now, double current)
+    private void EvaluateCount(
+        AutoCommand command,
+        ScheduleState state,
+        DateTime now,
+        double current
+    )
     {
         if (!Compare(current, command.TriggerCount, command.Compare))
             return;
@@ -247,15 +260,23 @@ public sealed class AutoCommandExecutor
         if (command.Steps == null || command.Steps.Count == 0)
             return;
 
-        if (!string.IsNullOrEmpty(command.Name) &&
-            running.Any(r => string.Equals(r.Name, command.Name, StringComparison.OrdinalIgnoreCase)))
+        if (
+            !string.IsNullOrEmpty(command.Name)
+            && running.Any(r =>
+                string.Equals(r.Name, command.Name, StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             log.Info("Auto command '{0}' is already running; skipping ({1})", command.Name, reason);
             return;
         }
 
         running.Add(new RunningSequence(this, command, DateTime.Now));
-        log.Info("Auto command '{0}' started ({1})", string.IsNullOrEmpty(command.Name) ? "(unnamed)" : command.Name, reason);
+        log.Info(
+            "Auto command '{0}' started ({1})",
+            string.IsNullOrEmpty(command.Name) ? "(unnamed)" : command.Name,
+            reason
+        );
     }
 
     /// <summary>Starts the auto command with the given name, regardless of trigger.</summary>
@@ -266,8 +287,11 @@ public sealed class AutoCommandExecutor
 
         foreach (AutoCommand command in config.AutoCommands)
         {
-            if (string.Equals(command.Name, name, StringComparison.OrdinalIgnoreCase) &&
-                command.Steps != null && command.Steps.Count > 0)
+            if (
+                string.Equals(command.Name, name, StringComparison.OrdinalIgnoreCase)
+                && command.Steps != null
+                && command.Steps.Count > 0
+            )
             {
                 Start(command, "runauto");
                 return true;
@@ -312,7 +336,10 @@ public sealed class AutoCommandExecutor
     public IEnumerable<string> Describe()
     {
         List<AutoCommand> commands = config.AutoCommands?.ToList() ?? new List<AutoCommand>();
-        var lines = new List<string> { $"Auto commands: {commands.Count} configured, {running.Count} running" };
+        var lines = new List<string>
+        {
+            $"Auto commands: {commands.Count} configured, {running.Count} running",
+        };
 
         foreach (AutoCommand command in commands)
         {
@@ -374,7 +401,10 @@ public sealed class AutoCommandExecutor
 
             case StepAction.RunAuto:
                 if (!RunByName(step.Command))
-                    log.Warning("Auto command step RunAuto: no auto command named '{0}'", step.Command);
+                    log.Warning(
+                        "Auto command step RunAuto: no auto command named '{0}'",
+                        step.Command
+                    );
                 return;
         }
     }
@@ -399,18 +429,33 @@ public sealed class AutoCommandExecutor
 
         Color? color = ParseColor(colorText);
         if (color.HasValue)
-            MyVisualScriptLogicProvider.SendChatMessageColored(text, color.Value, "Server", 0L, MyFontEnum.White);
+            MyVisualScriptLogicProvider.SendChatMessageColored(
+                text,
+                color.Value,
+                "Server",
+                0L,
+                MyFontEnum.White
+            );
         else
             MyVisualScriptLogicProvider.SendChatMessage(text, "Server", 0L, MyFontEnum.White);
     }
 
-    private static void Notify(string text, int durationMs, NotificationFont font, string legacyColorText)
+    private static void Notify(
+        string text,
+        int durationMs,
+        NotificationFont font,
+        string legacyColorText
+    )
     {
         if (string.IsNullOrEmpty(text))
             return;
 
         int duration = durationMs > 0 ? durationMs : 5000;
-        MyVisualScriptLogicProvider.ShowNotificationToAll(text, duration, FontFor(font, legacyColorText));
+        MyVisualScriptLogicProvider.ShowNotificationToAll(
+            text,
+            duration,
+            FontFor(font, legacyColorText)
+        );
     }
 
     // ----- Vote -----------------------------------------------------------
@@ -433,7 +478,10 @@ public sealed class AutoCommandExecutor
         lastVoteResult = "in progress";
         lastVotePercentage = 0f;
 
-        Announce($"Vote started: {voteName}. Type !ess vote yes or !ess vote no ({config.VoteDurationSeconds}s).", null);
+        Announce(
+            $"Vote started: {voteName}. Type !ess vote yes or !ess vote no ({config.VoteDurationSeconds}s).",
+            null
+        );
         return $"Vote '{voteName}' started.";
     }
 
@@ -494,7 +542,7 @@ public sealed class AutoCommandExecutor
             $"Votes: {yes} yes, {no} no ({percentage:0.##}% yes)",
             $"Last vote: {lastVoteName ?? "(none)"}",
             $"Last result: {lastVoteResult}",
-            $"Last yes percent: {lastVotePercentage:0.##}%"
+            $"Last yes percent: {lastVotePercentage:0.##}%",
         };
     }
 
@@ -549,8 +597,10 @@ public sealed class AutoCommandExecutor
 
         foreach (AutoCommand command in config.AutoCommands)
         {
-            if (command.Trigger == AutoTrigger.Vote &&
-                string.Equals(command.Name, name, StringComparison.OrdinalIgnoreCase))
+            if (
+                command.Trigger == AutoTrigger.Vote
+                && string.Equals(command.Name, name, StringComparison.OrdinalIgnoreCase)
+            )
                 return command;
         }
 
@@ -587,11 +637,9 @@ public sealed class AutoCommandExecutor
         return state;
     }
 
-    private static int GetOnlinePlayerCount()
-        => Utilities.GetOnlinePlayerCount();
+    private static int GetOnlinePlayerCount() => Utilities.GetOnlinePlayerCount();
 
-    private static int GetGridCount()
-        => MyEntities.GetEntities().OfType<MyCubeGrid>().Count();
+    private static int GetGridCount() => MyEntities.GetEntities().OfType<MyCubeGrid>().Count();
 
     private static bool Compare(double value, double target, TriggerCompare compare)
     {
@@ -608,8 +656,8 @@ public sealed class AutoCommandExecutor
         }
     }
 
-    private static TimeSpan Cooldown(string interval)
-        => TryParseSpan(interval, out TimeSpan span) && span > TimeSpan.Zero
+    private static TimeSpan Cooldown(string interval) =>
+        TryParseSpan(interval, out TimeSpan span) && span > TimeSpan.Zero
             ? span
             : TimeSpan.FromSeconds(60);
 
@@ -619,22 +667,28 @@ public sealed class AutoCommandExecutor
         return candidate <= now ? candidate.AddDays(1) : candidate;
     }
 
-    private static bool DayMatches(AutoDayOfWeek day, DateTime date)
-        => day == AutoDayOfWeek.All || (int)day - 1 == (int)date.DayOfWeek;
+    private static bool DayMatches(AutoDayOfWeek day, DateTime date) =>
+        day == AutoDayOfWeek.All || (int)day - 1 == (int)date.DayOfWeek;
 
-    private static bool TryParseSpan(string text, out TimeSpan span)
-        => TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out span);
+    private static bool TryParseSpan(string text, out TimeSpan span) =>
+        TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out span);
 
     private static string FontFor(NotificationFont font, string legacyColorText)
     {
         switch (font)
         {
-            case NotificationFont.White: return MyFontEnum.White;
-            case NotificationFont.Red: return MyFontEnum.Red;
-            case NotificationFont.Green: return MyFontEnum.Green;
-            case NotificationFont.Blue: return MyFontEnum.Blue;
-            case NotificationFont.DarkBlue: return MyFontEnum.DarkBlue;
-            case NotificationFont.Monospace: return "Monospace";
+            case NotificationFont.White:
+                return MyFontEnum.White;
+            case NotificationFont.Red:
+                return MyFontEnum.Red;
+            case NotificationFont.Green:
+                return MyFontEnum.Green;
+            case NotificationFont.Blue:
+                return MyFontEnum.Blue;
+            case NotificationFont.DarkBlue:
+                return MyFontEnum.DarkBlue;
+            case NotificationFont.Monospace:
+                return "Monospace";
         }
 
         if (string.IsNullOrWhiteSpace(legacyColorText))
@@ -642,10 +696,14 @@ public sealed class AutoCommandExecutor
 
         switch (legacyColorText.Trim().ToLowerInvariant())
         {
-            case "red": return MyFontEnum.Red;
-            case "green": return MyFontEnum.Green;
-            case "blue": return MyFontEnum.Blue;
-            default: return MyFontEnum.White;
+            case "red":
+                return MyFontEnum.Red;
+            case "green":
+                return MyFontEnum.Green;
+            case "blue":
+                return MyFontEnum.Blue;
+            default:
+                return MyFontEnum.White;
         }
     }
 
@@ -657,33 +715,50 @@ public sealed class AutoCommandExecutor
         text = text.Trim();
 
         string[] parts = text.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length == 3 &&
-            int.TryParse(parts[0], out int r) &&
-            int.TryParse(parts[1], out int g) &&
-            int.TryParse(parts[2], out int b))
+        if (
+            parts.Length == 3
+            && int.TryParse(parts[0], out int r)
+            && int.TryParse(parts[1], out int g)
+            && int.TryParse(parts[2], out int b)
+        )
             return new Color(Clamp(r), Clamp(g), Clamp(b));
 
         switch (text.ToLowerInvariant())
         {
-            case "white": return Color.White;
-            case "black": return Color.Black;
-            case "red": return Color.Red;
-            case "green": return Color.Green;
-            case "blue": return Color.Blue;
-            case "yellow": return Color.Yellow;
-            case "cyan": return Color.Cyan;
-            case "magenta": return Color.Magenta;
-            case "orange": return Color.Orange;
-            case "purple": return Color.Purple;
-            case "pink": return Color.Pink;
+            case "white":
+                return Color.White;
+            case "black":
+                return Color.Black;
+            case "red":
+                return Color.Red;
+            case "green":
+                return Color.Green;
+            case "blue":
+                return Color.Blue;
+            case "yellow":
+                return Color.Yellow;
+            case "cyan":
+                return Color.Cyan;
+            case "magenta":
+                return Color.Magenta;
+            case "orange":
+                return Color.Orange;
+            case "purple":
+                return Color.Purple;
+            case "pink":
+                return Color.Pink;
             case "gray":
-            case "grey": return Color.Gray;
-            default: return null;
+            case "grey":
+                return Color.Gray;
+            default:
+                return null;
         }
     }
 
-    private static int Clamp(int value)
-        => value < 0 ? 0 : value > 255 ? 255 : value;
+    private static int Clamp(int value) =>
+        value < 0 ? 0
+        : value > 255 ? 255
+        : value;
 
     private sealed class ScheduleState
     {

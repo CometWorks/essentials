@@ -12,29 +12,44 @@ public sealed partial class EssentialsModule
 {
     [Command("tp", "Teleport one entity to another.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void Teleport(string entityToMove = null, string destination = null)
-        => TeleportEntity(entityToMove, destination);
+    public void Teleport(string entityToMove = null, string destination = null) =>
+        TeleportEntity(entityToMove, destination);
 
     [Command("tpto", "Teleport yourself or another entity to an entity.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TeleportTo(string destination, string entityToMove = null)
-        => TeleportEntity(entityToMove, destination);
+    public void TeleportTo(string destination, string entityToMove = null) =>
+        TeleportEntity(entityToMove, destination);
 
     [Command("tphere", "Teleport an entity to you.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TeleportHere(string entityToMove, string destination = null)
-        => TeleportEntity(entityToMove, destination);
+    public void TeleportHere(string entityToMove, string destination = null) =>
+        TeleportEntity(entityToMove, destination);
 
     private void TeleportEntity(string entityToMove, string destination)
     {
-        if (!TryResolveTeleportEntity(destination, "Destination entity not found.", out IMyEntity destinationEntity))
+        if (
+            !TryResolveTeleportEntity(
+                destination,
+                "Destination entity not found.",
+                out IMyEntity destinationEntity
+            )
+        )
             return;
 
-        if (!TryResolveTeleportEntity(entityToMove, "Target entity not found.", out IMyEntity targetEntity))
+        if (
+            !TryResolveTeleportEntity(
+                entityToMove,
+                "Target entity not found.",
+                out IMyEntity targetEntity
+            )
+        )
             return;
 
         double radius = Math.Max(1.0, targetEntity.WorldAABB.Extents.Max());
-        Vector3D? targetPosition = FindFreePlaceNear(destinationEntity.GetPosition(), (float)radius);
+        Vector3D? targetPosition = FindFreePlaceNear(
+            destinationEntity.GetPosition(),
+            (float)radius
+        );
         if (targetPosition == null)
         {
             Context.Respond("No free place to teleport.");
@@ -43,7 +58,9 @@ public sealed partial class EssentialsModule
 
         targetEntity.PositionComp.SetPosition(targetPosition.Value);
         targetEntity.Physics?.ClearSpeed();
-        Context.Respond($"Teleported '{EntityDisplayName(targetEntity)}' to '{EntityDisplayName(destinationEntity)}'.");
+        Context.Respond(
+            $"Teleported '{EntityDisplayName(targetEntity)}' to '{EntityDisplayName(destinationEntity)}'."
+        );
     }
 
     private bool TryResolveTeleportEntity(string nameOrId, string error, out IMyEntity entity)

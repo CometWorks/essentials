@@ -31,7 +31,13 @@ internal sealed class AutoCommandResponder : ICommandResponder
         }
 
         if (reply.Color.HasValue)
-            MyVisualScriptLogicProvider.SendChatMessageColored(reply.Text, reply.Color.Value, author, 0L, font);
+            MyVisualScriptLogicProvider.SendChatMessageColored(
+                reply.Text,
+                reply.Color.Value,
+                author,
+                0L,
+                font
+            );
         else
             MyVisualScriptLogicProvider.SendChatMessage(reply.Text, author, 0L, font);
     }

@@ -20,7 +20,10 @@ namespace ServerPlugin.Commands;
 
 public sealed partial class EssentialsModule
 {
-    private static readonly MyDefinitionId SpaceCreditDefinitionId = new MyDefinitionId(typeof(MyObjectBuilder_PhysicalObject), "SpaceCredit");
+    private static readonly MyDefinitionId SpaceCreditDefinitionId = new MyDefinitionId(
+        typeof(MyObjectBuilder_PhysicalObject),
+        "SpaceCredit"
+    );
 
     [Command("TestEconSync", "Refresh the caller's local economy account.")]
     [Permission(MyPromoteLevel.Admin)]
@@ -36,8 +39,7 @@ public sealed partial class EssentialsModule
 
     [Command("fulleconsync", "Refresh all local player economy accounts.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string FullEconSyncLower()
-        => FullEconSync();
+    public string FullEconSyncLower() => FullEconSync();
 
     [Command("FullEconSync", "Refresh all local player economy accounts.")]
     [Permission(MyPromoteLevel.Admin)]
@@ -55,8 +57,8 @@ public sealed partial class EssentialsModule
 
     [Command("SingleEconSync", "Refresh one local player economy account.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string SingleEconSync(string playerNameOrSteamId)
-        => SingleEconSyncLower(playerNameOrSteamId);
+    public string SingleEconSync(string playerNameOrSteamId) =>
+        SingleEconSyncLower(playerNameOrSteamId);
 
     [Command("singleeconsync", "Refresh one local player economy account.")]
     [Permission(MyPromoteLevel.Admin)]
@@ -79,20 +81,24 @@ public sealed partial class EssentialsModule
             return BuildAccountDebug(faction.Name, faction.FactionId);
 
         IMyIdentity identity = Utilities.GetIdentityByNameOrIds(playerOrFaction);
-        return identity == null ? "Could not find that player or faction." : BuildAccountDebug(identity.DisplayName, identity.IdentityId);
+        return identity == null
+            ? "Could not find that player or faction."
+            : BuildAccountDebug(identity.DisplayName, identity.IdentityId);
     }
 
     [Command("econ sync all", "Refresh all local player economy accounts.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string EconSyncAll()
-        => FullEconSync();
+    public string EconSyncAll() => FullEconSync();
 
     [Command("econ sync player", "Refresh one local player economy account.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string EconSyncPlayer(string playerNameOrSteamId)
-        => SingleEconSyncLower(playerNameOrSteamId);
+    public string EconSyncPlayer(string playerNameOrSteamId) =>
+        SingleEconSyncLower(playerNameOrSteamId);
 
-    [Command("eco resetbalances", "Reset player balances to the starting balance and faction balances to zero.")]
+    [Command(
+        "eco resetbalances",
+        "Reset player balances to the starting balance and faction balances to zero."
+    )]
     [Permission(MyPromoteLevel.Admin)]
     public string EcoResetBalances()
     {
@@ -103,13 +109,13 @@ public sealed partial class EssentialsModule
 
     [Command("eco resetplayers", "Reset player balances to the starting balance.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string EcoResetPlayers()
-        => $"{ResetPlayerAccountsToStartingBalance():#,##0} player balance(s) reset.";
+    public string EcoResetPlayers() =>
+        $"{ResetPlayerAccountsToStartingBalance():#,##0} player balance(s) reset.";
 
     [Command("eco resetfactions", "Reset faction balances to zero.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string EcoResetFactions()
-        => $"{ResetFactionAccountsToZero():#,##0} faction balance(s) reset.";
+    public string EcoResetFactions() =>
+        $"{ResetFactionAccountsToZero():#,##0} faction balance(s) reset.";
 
     [Command("eco resetplayer", "Set a player's balance to zero.")]
     [Permission(MyPromoteLevel.Admin)]
@@ -185,7 +191,13 @@ public sealed partial class EssentialsModule
         if (player?.Character is not MyCharacter character)
             return "You have no character.";
 
-        if (!TryGetLookAtEconomyGridGroup(character, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        if (
+            !TryGetLookAtEconomyGridGroup(
+                character,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         long deposited = 0;
@@ -197,7 +209,9 @@ public sealed partial class EssentialsModule
             if (!GridIsOwnerOrFactionOwned(grid, Context.Caller.IdentityId))
                 continue;
 
-            foreach (MyCubeBlock block in grid.GetFatBlocks().Where(block => block?.HasInventory == true))
+            foreach (
+                MyCubeBlock block in grid.GetFatBlocks().Where(block => block?.HasInventory == true)
+            )
             {
                 if (!CanUseCreditInventory(block, Context.Caller.IdentityId, playerOwnedOnly))
                     continue;
@@ -211,11 +225,18 @@ public sealed partial class EssentialsModule
             return "No SpaceCredit items found.";
 
         MyBankingSystem.ChangeBalance(Context.Caller.IdentityId, deposited);
-        Plugin.Instance?.Log.Info("{0} deposited {1} SpaceCredit items", Context.Caller.SteamId, deposited);
+        Plugin.Instance?.Log.Info(
+            "{0} deposited {1} SpaceCredit items",
+            Context.Caller.SteamId,
+            deposited
+        );
         return $"Deposited: {FormatCredits(deposited)}";
     }
 
-    [Command("eco withdraw", "Withdraw credits as physical SpaceCredit items into a cargo container.")]
+    [Command(
+        "eco withdraw",
+        "Withdraw credits as physical SpaceCredit items into a cargo container."
+    )]
     [Permission(MyPromoteLevel.None)]
     public string EcoWithdraw(long amount)
     {
@@ -239,7 +260,13 @@ public sealed partial class EssentialsModule
         if (player?.Character is not MyCharacter character)
             return "You have no character.";
 
-        if (!TryGetLookAtEconomyGridGroup(character, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        if (
+            !TryGetLookAtEconomyGridGroup(
+                character,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         MyFixedPoint fixedAmount = (MyFixedPoint)(int)amount;
@@ -248,19 +275,33 @@ public sealed partial class EssentialsModule
             if (!GridIsOwnerOrFactionOwned(grid, Context.Caller.IdentityId))
                 continue;
 
-            foreach (MyCargoContainer cargo in grid.GetFatBlocks().OfType<MyCargoContainer>().Where(cargo => cargo.IsFunctional))
+            foreach (
+                MyCargoContainer cargo in grid.GetFatBlocks()
+                    .OfType<MyCargoContainer>()
+                    .Where(cargo => cargo.IsFunctional)
+            )
             {
-                if (!CanUseCreditInventory(cargo, Context.Caller.IdentityId, playerOwnedOnly: false))
+                if (
+                    !CanUseCreditInventory(cargo, Context.Caller.IdentityId, playerOwnedOnly: false)
+                )
                     continue;
 
                 MyInventory inventory = cargo.GetInventory() as MyInventory;
-                if (inventory == null || !inventory.CanItemsBeAdded(fixedAmount, SpaceCreditDefinitionId))
+                if (
+                    inventory == null
+                    || !inventory.CanItemsBeAdded(fixedAmount, SpaceCreditDefinitionId)
+                )
                     continue;
 
                 inventory.AddItems(fixedAmount, CreateSpaceCreditObjectBuilder());
                 inventory.Refresh();
                 MyBankingSystem.ChangeBalance(Context.Caller.IdentityId, -amount);
-                Plugin.Instance?.Log.Info("{0} withdrew {1} SpaceCredit items to {2}", Context.Caller.SteamId, amount, cargo.CubeGrid?.DisplayName);
+                Plugin.Instance?.Log.Info(
+                    "{0} withdrew {1} SpaceCredit items to {2}",
+                    Context.Caller.SteamId,
+                    amount,
+                    cargo.CubeGrid?.DisplayName
+                );
                 return $"Added credits to {cargo.DisplayNameText} in grid {cargo.CubeGrid?.DisplayName}.";
             }
         }
@@ -270,8 +311,7 @@ public sealed partial class EssentialsModule
 
     [Command("eco withdrawall", "Disabled legacy full withdrawal command.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string EcoWithdrawAll()
-        => "Command disabled. Withdraw with an amount.";
+    public string EcoWithdrawAll() => "Command disabled. Withdraw with an amount.";
 
     private static bool RefreshEconomyAccount(long ownerId)
     {
@@ -285,14 +325,18 @@ public sealed partial class EssentialsModule
 
     private static string BuildAccountDebug(string displayName, long accountId)
     {
-        if (MyBankingSystem.Static == null || !MyBankingSystem.Static.TryGetAccountInfo(accountId, out MyAccountInfo account))
+        if (
+            MyBankingSystem.Static == null
+            || !MyBankingSystem.Static.TryGetAccountInfo(accountId, out MyAccountInfo account)
+        )
             return $"{displayName} ({accountId}) account not found.";
 
         return $"{displayName} ({accountId}) balance: {FormatCredits(account.Balance)}";
     }
 
-    private static IEnumerable<long> GetPlayerAccountIdentityIds()
-        => MySession.Static.Players.GetAllIdentities()
+    private static IEnumerable<long> GetPlayerAccountIdentityIds() =>
+        MySession
+            .Static.Players.GetAllIdentities()
             .Where(identity => !MySession.Static.Players.IdentityIsNpc(identity.IdentityId))
             .Select(identity => identity.IdentityId)
             .Where(identityId => MyBankingSystem.GetBalance(identityId) >= 0);
@@ -302,7 +346,10 @@ public sealed partial class EssentialsModule
         int count = 0;
         foreach (long identityId in GetPlayerAccountIdentityIds().ToList())
         {
-            SetBankAccountBalance(identityId, MyBankingSystem.BankingSystemDefinition.StartingBalance);
+            SetBankAccountBalance(
+                identityId,
+                MyBankingSystem.BankingSystemDefinition.StartingBalance
+            );
             count++;
         }
 
@@ -333,9 +380,11 @@ public sealed partial class EssentialsModule
     private bool TryGetLookAtEconomyGridGroup(
         MyCharacter character,
         out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
-        out string error)
+        out string error
+    )
     {
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups = GridGroupFinder.FindLookAtGridGroup(character);
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups =
+            GridGroupFinder.FindLookAtGridGroup(character);
         if (!TryGetSingleGroup(groups, out group, out error))
             return false;
 
@@ -351,12 +400,20 @@ public sealed partial class EssentialsModule
         if (ownerId == 0)
             return false;
 
-        MyFaction ownerFaction = MySession.Static.Factions.TryGetPlayerFaction(ownerId) as MyFaction;
-        MyFaction playerFaction = MySession.Static.Factions.TryGetPlayerFaction(identityId) as MyFaction;
-        return ownerFaction != null && playerFaction != null && ownerFaction.FactionId == playerFaction.FactionId;
+        MyFaction ownerFaction =
+            MySession.Static.Factions.TryGetPlayerFaction(ownerId) as MyFaction;
+        MyFaction playerFaction =
+            MySession.Static.Factions.TryGetPlayerFaction(identityId) as MyFaction;
+        return ownerFaction != null
+            && playerFaction != null
+            && ownerFaction.FactionId == playerFaction.FactionId;
     }
 
-    private static bool CanUseCreditInventory(MyCubeBlock block, long identityId, bool playerOwnedOnly)
+    private static bool CanUseCreditInventory(
+        MyCubeBlock block,
+        long identityId,
+        bool playerOwnedOnly
+    )
     {
         MyRelationsBetweenPlayerAndBlock relation = block.GetUserRelationToOwner(identityId);
         if (relation == MyRelationsBetweenPlayerAndBlock.Owner)
@@ -389,10 +446,18 @@ public sealed partial class EssentialsModule
         return deposited;
     }
 
-    private static bool IsSpaceCreditItem(MyPhysicalInventoryItem item)
-        => item.Content != null &&
-           string.Equals(item.Content.TypeId.ToString(), "MyObjectBuilder_PhysicalObject", StringComparison.InvariantCulture) &&
-           string.Equals(item.Content.SubtypeName, "SpaceCredit", StringComparison.InvariantCulture);
+    private static bool IsSpaceCreditItem(MyPhysicalInventoryItem item) =>
+        item.Content != null
+        && string.Equals(
+            item.Content.TypeId.ToString(),
+            "MyObjectBuilder_PhysicalObject",
+            StringComparison.InvariantCulture
+        )
+        && string.Equals(
+            item.Content.SubtypeName,
+            "SpaceCredit",
+            StringComparison.InvariantCulture
+        );
 
     private static long FixedPointToWholeLong(MyFixedPoint amount)
     {
@@ -406,6 +471,6 @@ public sealed partial class EssentialsModule
         return (long)value;
     }
 
-    private static MyObjectBuilder_PhysicalObject CreateSpaceCreditObjectBuilder()
-        => new MyObjectBuilder_PhysicalObject { SubtypeName = "SpaceCredit" };
+    private static MyObjectBuilder_PhysicalObject CreateSpaceCreditObjectBuilder() =>
+        new MyObjectBuilder_PhysicalObject { SubtypeName = "SpaceCredit" };
 }

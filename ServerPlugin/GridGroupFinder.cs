@@ -11,27 +11,36 @@ namespace ServerPlugin;
 
 public static class GridGroupFinder
 {
-    public static ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> FindGridGroup(string gridName)
+    public static ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> FindGridGroup(
+        string gridName
+    )
     {
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups = new ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups =
+            new ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
 
-        Parallel.ForEach(MyCubeGridGroups.Static.Physical.Groups, group =>
-        {
-            foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Node node in group.Nodes)
+        Parallel.ForEach(
+            MyCubeGridGroups.Static.Physical.Groups,
+            group =>
             {
-                MyCubeGrid grid = node.NodeData;
-                if (grid == null || grid.MarkedForClose || grid.MarkedAsTrash || !grid.InScene)
-                    continue;
+                foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Node node in group.Nodes)
+                {
+                    MyCubeGrid grid = node.NodeData;
+                    if (grid == null || grid.MarkedForClose || grid.MarkedAsTrash || !grid.InScene)
+                        continue;
 
-                if (grid.DisplayName == gridName || grid.EntityId.ToString() == gridName)
-                    groups.Add(group);
+                    if (grid.DisplayName == gridName || grid.EntityId.ToString() == gridName)
+                        groups.Add(group);
+                }
             }
-        });
+        );
 
         return groups;
     }
 
-    public static ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> FindLookAtGridGroup(MyCharacter controlledEntity)
+    public static ConcurrentBag<MyGroups<
+        MyCubeGrid,
+        MyGridPhysicalGroupData
+    >.Group> FindLookAtGridGroup(MyCharacter controlledEntity)
     {
         const float range = 5000;
 
@@ -39,9 +48,15 @@ public static class GridGroupFinder
         Vector3D startPosition = worldMatrix.Translation + worldMatrix.Forward * 0.5f;
         Vector3D endPosition = worldMatrix.Translation + worldMatrix.Forward * range;
         RayD ray = new RayD(startPosition, worldMatrix.Forward);
-        Dictionary<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group, double> matches = new Dictionary<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group, double>();
+        Dictionary<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group, double> matches =
+            new Dictionary<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group, double>();
 
-        foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in MyCubeGridGroups.Static.Physical.Groups)
+        foreach (
+            MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in MyCubeGridGroups
+                .Static
+                .Physical
+                .Groups
+        )
         {
             foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Node node in group.Nodes)
             {
@@ -62,34 +77,45 @@ public static class GridGroupFinder
             }
         }
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> result = new ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> result =
+            new ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
         if (matches.Count > 0)
             result.Add(matches.OrderBy(item => item.Value).First().Key);
 
         return result;
     }
 
-    public static ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> FindMechanicalGridGroup(string gridName)
+    public static ConcurrentBag<MyGroups<
+        MyCubeGrid,
+        MyGridMechanicalGroupData
+    >.Group> FindMechanicalGridGroup(string gridName)
     {
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups = new ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group>();
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups =
+            new ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group>();
 
-        Parallel.ForEach(MyCubeGridGroups.Static.Mechanical.Groups, group =>
-        {
-            foreach (MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Node node in group.Nodes)
+        Parallel.ForEach(
+            MyCubeGridGroups.Static.Mechanical.Groups,
+            group =>
             {
-                MyCubeGrid grid = node.NodeData;
-                if (grid == null || grid.MarkedForClose || grid.MarkedAsTrash || !grid.InScene)
-                    continue;
+                foreach (MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Node node in group.Nodes)
+                {
+                    MyCubeGrid grid = node.NodeData;
+                    if (grid == null || grid.MarkedForClose || grid.MarkedAsTrash || !grid.InScene)
+                        continue;
 
-                if (grid.DisplayName == gridName || grid.EntityId.ToString() == gridName)
-                    groups.Add(group);
+                    if (grid.DisplayName == gridName || grid.EntityId.ToString() == gridName)
+                        groups.Add(group);
+                }
             }
-        });
+        );
 
         return groups;
     }
 
-    public static ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> FindLookAtMechanicalGridGroup(MyCharacter controlledEntity)
+    public static ConcurrentBag<MyGroups<
+        MyCubeGrid,
+        MyGridMechanicalGroupData
+    >.Group> FindLookAtMechanicalGridGroup(MyCharacter controlledEntity)
     {
         const float range = 5000;
 
@@ -97,9 +123,15 @@ public static class GridGroupFinder
         Vector3D startPosition = worldMatrix.Translation + worldMatrix.Forward * 0.5f;
         Vector3D endPosition = worldMatrix.Translation + worldMatrix.Forward * range;
         RayD ray = new RayD(startPosition, worldMatrix.Forward);
-        Dictionary<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group, double> matches = new Dictionary<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group, double>();
+        Dictionary<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group, double> matches =
+            new Dictionary<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group, double>();
 
-        foreach (MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group in MyCubeGridGroups.Static.Mechanical.Groups)
+        foreach (
+            MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group in MyCubeGridGroups
+                .Static
+                .Mechanical
+                .Groups
+        )
         {
             foreach (MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Node node in group.Nodes)
             {
@@ -120,7 +152,8 @@ public static class GridGroupFinder
             }
         }
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> result = new ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group>();
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> result =
+            new ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group>();
         if (matches.Count > 0)
             result.Add(matches.OrderBy(item => item.Value).First().Key);
 

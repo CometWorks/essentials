@@ -51,7 +51,10 @@ public sealed partial class EssentialsModule
         foreach (MyFunctionalBlock block in FunctionalBlocks())
         {
             string blockType = block.BlockDefinition.Id.TypeId.ToString().Substring(16);
-            if (string.Equals(type, blockType, StringComparison.InvariantCultureIgnoreCase) && block.Enabled)
+            if (
+                string.Equals(type, blockType, StringComparison.InvariantCultureIgnoreCase)
+                && block.Enabled
+            )
             {
                 block.Enabled = false;
                 count++;
@@ -82,7 +85,13 @@ public sealed partial class EssentialsModule
     public void RemoveSubtype(string subtype)
     {
         List<MySlimBlock> toRemove = Blocks()
-            .Where(block => string.Equals(subtype, block.BlockDefinition.Id.SubtypeName, StringComparison.InvariantCultureIgnoreCase))
+            .Where(block =>
+                string.Equals(
+                    subtype,
+                    block.BlockDefinition.Id.SubtypeName,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
             .ToList();
 
         foreach (MySlimBlock block in toRemove)
@@ -95,7 +104,13 @@ public sealed partial class EssentialsModule
     public void RemoveType(string type)
     {
         List<MySlimBlock> toRemove = Blocks()
-            .Where(block => string.Equals(type, block.BlockDefinition.Id.TypeId.ToString().Substring(16), StringComparison.InvariantCultureIgnoreCase))
+            .Where(block =>
+                string.Equals(
+                    type,
+                    block.BlockDefinition.Id.TypeId.ToString().Substring(16),
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
             .ToList();
 
         foreach (MySlimBlock block in toRemove)
@@ -108,7 +123,10 @@ public sealed partial class EssentialsModule
     public void OnGeneral(BlockCategory category)
     {
         int count = 0;
-        foreach (MyFunctionalBlock block in FunctionalBlocks().Where(block => IsBlockTypeOf(block, category)))
+        foreach (
+            MyFunctionalBlock block in FunctionalBlocks()
+                .Where(block => IsBlockTypeOf(block, category))
+        )
         {
             block.Enabled = true;
             count++;
@@ -121,7 +139,10 @@ public sealed partial class EssentialsModule
     public void OffGeneral(BlockCategory category)
     {
         int count = 0;
-        foreach (MyFunctionalBlock block in FunctionalBlocks().Where(block => IsBlockTypeOf(block, category)))
+        foreach (
+            MyFunctionalBlock block in FunctionalBlocks()
+                .Where(block => IsBlockTypeOf(block, category))
+        )
         {
             block.Enabled = false;
             count++;
@@ -130,14 +151,16 @@ public sealed partial class EssentialsModule
         Context.Respond($"Disabled {count} {category} blocks.");
     }
 
-    private static IEnumerable<MyFunctionalBlock> FunctionalBlocks()
-        => MyEntities.GetEntities()
+    private static IEnumerable<MyFunctionalBlock> FunctionalBlocks() =>
+        MyEntities
+            .GetEntities()
             .OfType<MyCubeGrid>()
             .Where(grid => grid.Projector == null)
             .SelectMany(grid => grid.GetFatBlocks().OfType<MyFunctionalBlock>());
 
-    private static IEnumerable<MySlimBlock> Blocks()
-        => MyEntities.GetEntities()
+    private static IEnumerable<MySlimBlock> Blocks() =>
+        MyEntities
+            .GetEntities()
             .OfType<MyCubeGrid>()
             .Where(grid => grid.Projector == null)
             .SelectMany(grid => grid.GetBlocks());
@@ -147,20 +170,22 @@ public sealed partial class EssentialsModule
         switch (category)
         {
             case BlockCategory.Power:
-                return block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Reactor) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_BatteryBlock) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_SolarPanel) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_FueledPowerProducer);
+                return block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Reactor)
+                    || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_BatteryBlock)
+                    || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_SolarPanel)
+                    || block.BlockDefinition.Id.TypeId
+                        == typeof(MyObjectBuilder_FueledPowerProducer);
 
             case BlockCategory.Production:
-                return block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Assembler) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Refinery) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_OxygenGenerator);
+                return block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Assembler)
+                    || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_Refinery)
+                    || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_OxygenGenerator);
 
             case BlockCategory.Weapons:
-                return block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_InteriorTurret) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_LargeGatlingTurret) ||
-                       block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_LargeMissileTurret);
+                return block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_InteriorTurret)
+                    || block.BlockDefinition.Id.TypeId == typeof(MyObjectBuilder_LargeGatlingTurret)
+                    || block.BlockDefinition.Id.TypeId
+                        == typeof(MyObjectBuilder_LargeMissileTurret);
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(category), category, null);
@@ -171,6 +196,6 @@ public sealed partial class EssentialsModule
     {
         Power,
         Production,
-        Weapons
+        Weapons,
     }
 }
