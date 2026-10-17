@@ -196,7 +196,7 @@ uv run pytest -n 6
 `-n` is the number of rigs that run side by side, each a server and two clients on a
 slot of its own, with about 5 GB of RAM per rig. The memory guard starts the processes
 20 seconds apart, so the last rig is up after about 6 minutes; the first ones start on
-the tests meanwhile. A full run with `-n 6` takes about RUNTIME on a 32-core machine with
+the tests meanwhile. A full run with `-n 6` takes about 15 minutes on a 32-core machine with
 128 GB of RAM. Without `-n`, one rig runs all the tests in turn.
 
 Where GitHub's API rate limits Magnetar, export `PULSAR_GITHUB_TOKEN` for it to download
