@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<PluginData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="GitHubPlugin">
+
+    <!-- Test-only server plugin of the Essentials suite, loaded as a dev folder.
+         Never published to a hub. -->
+    <Id>6A1F0C3E-58B2-4D7A-9E4C-2B8D7F1E0A93</Id>
+    <RepoId>CometWorks/essentials</RepoId>
+    <FriendlyName>Essentials Probe</FriendlyName>
+    <Author>CometWorks</Author>
+    <Tooltip>Test hooks for the Essentials test suite</Tooltip>
+    <Commit>TODO Git commit hash</Commit>
+
+</PluginData>
