@@ -10,7 +10,7 @@ import time
 import prefabs
 import world
 from conftest import wait_until
-from session import distance, offset
+from session import FRONT, distance, offset
 
 # --- homes -------------------------------------------------------------------
 
@@ -72,7 +72,14 @@ def test_homes_switched_off(game):
 
 
 def test_no_home_teleport_from_a_seat(game):
-    g = prefabs.Grid("Chair", (0.0, -1.25, -10.0), slab=(3, 1, 3), owner=world.PLAYER_B)
+    # The layout the other seat tests use
+    g = prefabs.Grid(
+        "Chair",
+        offset(FRONT, 0, -1.25, -20),
+        static=False,
+        slab=(3, 1, 3),
+        owner=world.PLAYER_B,
+    )
     seat = g.add("seat", (1, 1, 1))
     game.spawn(g)
     game.b.ess("home add base")

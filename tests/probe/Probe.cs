@@ -610,6 +610,22 @@ public sealed class ProbeCommands : CommandModule
         return Ok("tp", "done");
     }
 
+    [Command(
+        "dropplayer",
+        "Removes a player who left: the identity, its account and its link to the Steam id."
+    )]
+    [Permission(MyPromoteLevel.Admin)]
+    public string DropPlayer(ulong steamId)
+    {
+        if (OnlinePlayer(steamId) != null)
+            return Ok("dropplayer", "online");
+        long identityId = MySession.Static.Players.TryGetIdentityId(steamId);
+        if (identityId == 0)
+            return Ok("dropplayer", "none");
+        MySession.Static.Players.RemoveIdentity(identityId, new MyPlayer.PlayerId(steamId, 0));
+        return Ok("dropplayer", "done");
+    }
+
     [Command("promote", "Sets a player's promote level.")]
     [Permission(MyPromoteLevel.Admin)]
     public string Promote(ulong steamId, MyPromoteLevel level)

@@ -106,3 +106,10 @@ def test_new_user_motd_for_a_first_time_player(game):
         )
     finally:
         newcomer.stop()
+        # Delta's identity would show up in the balance and player lists
+        wait_until(
+            lambda: game.a.probe("dropplayer", newcomer.steam_id)
+            == "Probe dropplayer: done",
+            30,
+            "Delta gone",
+        )
