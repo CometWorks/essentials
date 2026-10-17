@@ -120,12 +120,8 @@ public sealed class ProbeCommands : CommandModule
         return Ok("cfg", $"{name}={Convert.ToString(value, CultureInfo.InvariantCulture)}");
     }
 
-    [Command(
-        "forget",
-        "Clears the plugin's cooldowns, confirmations, offers, mutes, homes, votes and auto commands."
-    )]
-    [Permission(MyPromoteLevel.Admin)]
-    public string Forget()
+    // Clears the plugin's cooldowns, confirmations, offers, mutes, homes, votes and auto commands
+    private void Forget()
     {
         foreach (
             string name in new[]
@@ -161,7 +157,6 @@ public sealed class ProbeCommands : CommandModule
         object notices = Get(Plugin, "cleanupLookNotifications");
         ((IDictionary)Get(notices, "playerStates")).Clear();
         ((ISet<string>)Get(notices, "reportedInvalidRules")).Clear();
-        return Ok("forget", "done");
     }
 
     [Command("flushlog", "Writes the game log out, so the tests can read what the plugin logged.")]

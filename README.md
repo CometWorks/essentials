@@ -176,9 +176,11 @@ Block Limits plugin bridge and the Quasar config UI.
 The test world is the game's Empty World with the test players and the faction, and no
 grids. `tests/probe` is a test-only server plugin the server loads next to Essentials: it
 spawns the grids each test needs (`tests/prefabs.py`), makes identities, factions,
-asteroids and safe zones, reports the state of the world on the server, puts a new config
-into the running plugin and clears the plugin's cooldowns, confirmations, mutes, homes and
-votes between tests. So the server restarts only in `test_lifecycle.py`.
+asteroids and safe zones, reports the state of the world on the server and puts a new
+config into the running plugin. Between tests it resets the world in one command: no grids,
+GPS entries or other characters, the default config, the plugin's cooldowns,
+confirmations, mutes, homes and votes forgotten, and both players at home. So the server
+restarts only in `test_lifecycle.py`.
 
 ### Running
 
