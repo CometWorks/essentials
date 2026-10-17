@@ -30,13 +30,20 @@ internal sealed class CleanupLookNotifications
             return;
         lastCheck = now;
 
-        if (!config.Enabled || config.CleanupLookNotices == null || config.CleanupLookNotices.Count == 0 || MySession.Static?.Ready != true)
+        if (
+            !config.Enabled
+            || config.CleanupLookNotices == null
+            || config.CleanupLookNotices.Count == 0
+            || MySession.Static?.Ready != true
+        )
         {
             playerStates.Clear();
             return;
         }
 
-        DateTime nextReminder = now.AddMinutes(Math.Max(1, Math.Min(1440, config.CleanupLookReminderMinutes)));
+        DateTime nextReminder = now.AddMinutes(
+            Math.Max(1, Math.Min(1440, config.CleanupLookReminderMinutes))
+        );
         online.Clear();
         foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
         {
@@ -64,14 +71,26 @@ internal sealed class CleanupLookNotifications
 
                 if (state.ReminderGridId != 0)
                 {
-                    MyCubeGrid reminderGrid = MyEntities.GetEntityByIdOrDefault(state.ReminderGridId) as MyCubeGrid;
-                    if (reminderGrid != null && reminderGrid.BigOwners.Contains(identityId) &&
-                        player.Controller?.ControlledEntity?.Entity != null &&
-                        Vector3D.DistanceSquared(player.GetPosition(), reminderGrid.PositionComp.GetPosition()) <= NotificationDistance * NotificationDistance &&
-                        state.ReminderRuleIndex < config.CleanupLookNotices.Count &&
-                        Matches(reminderGrid, config.CleanupLookNotices[state.ReminderRuleIndex]))
+                    MyCubeGrid reminderGrid =
+                        MyEntities.GetEntityByIdOrDefault(state.ReminderGridId) as MyCubeGrid;
+                    if (
+                        reminderGrid != null
+                        && reminderGrid.BigOwners.Contains(identityId)
+                        && player.Controller?.ControlledEntity?.Entity != null
+                        && Vector3D.DistanceSquared(
+                            player.GetPosition(),
+                            reminderGrid.PositionComp.GetPosition()
+                        )
+                            <= NotificationDistance * NotificationDistance
+                        && state.ReminderRuleIndex < config.CleanupLookNotices.Count
+                        && Matches(reminderGrid, config.CleanupLookNotices[state.ReminderRuleIndex])
+                    )
                     {
-                        Show(reminderGrid, config.CleanupLookNotices[state.ReminderRuleIndex], identityId);
+                        Show(
+                            reminderGrid,
+                            config.CleanupLookNotices[state.ReminderRuleIndex],
+                            identityId
+                        );
                         state.NextReminder = nextReminder;
                         continue;
                     }
@@ -82,7 +101,11 @@ internal sealed class CleanupLookNotifications
             }
             catch (Exception ex)
             {
-                Plugin.Instance?.Log.Warning(ex, "Cleanup look notification failed for player {0}", identityId);
+                Plugin.Instance?.Log.Warning(
+                    ex,
+                    "Cleanup look notification failed for player {0}",
+                    identityId
+                );
             }
         }
 
@@ -94,9 +117,16 @@ internal sealed class CleanupLookNotifications
             playerStates.Remove(identityId);
     }
 
-    private bool TryNotifyLookedAtGrid(MyPlayer player, long identityId, PlayerState state, DateTime nextReminder)
+    private bool TryNotifyLookedAtGrid(
+        MyPlayer player,
+        long identityId,
+        PlayerState state,
+        DateTime nextReminder
+    )
     {
-        MyCubeGrid grid = player.Controller?.ControlledEntity is MyCharacter character ? LookedAtGrid(character) : null;
+        MyCubeGrid grid = player.Controller?.ControlledEntity is MyCharacter character
+            ? LookedAtGrid(character)
+            : null;
         if (grid == null || !grid.BigOwners.Contains(identityId))
         {
             state.LastViewedGridId = 0;
@@ -132,25 +162,38 @@ internal sealed class CleanupLookNotifications
             return true;
 
         if (error != null && reportedInvalidRules.Add(rule.Conditions))
-            Plugin.Instance?.Log.Warning("Invalid cleanup look notification rule '{0}': {1}", rule.Conditions, error);
+            Plugin.Instance?.Log.Warning(
+                "Invalid cleanup look notification rule '{0}': {1}",
+                rule.Conditions,
+                error
+            );
         return false;
     }
 
-    private static void Show(MyCubeGrid grid, CleanupLookNotice rule, long identityId)
-        => MyVisualScriptLogicProvider.ShowNotification(
-            rule.Message.Replace("{GridName}", grid.DisplayName ?? ""), 7000, MyFontEnum.White, identityId);
+    private static void Show(MyCubeGrid grid, CleanupLookNotice rule, long identityId) =>
+        MyVisualScriptLogicProvider.ShowNotification(
+            rule.Message.Replace("{GridName}", grid.DisplayName ?? ""),
+            7000,
+            MyFontEnum.White,
+            identityId
+        );
 
     private static MyCubeGrid LookedAtGrid(MyCharacter character)
     {
         MatrixD head = character.GetHeadMatrix(true);
         Vector3D from = head.Translation + head.Forward * 0.5;
         LineD line = new LineD(from, from + head.Forward * NotificationDistance);
-        var hit = MyEntities.GetIntersectionWithLine(ref line, character, null, ignoreCharacters: true);
+        var hit = MyEntities.GetIntersectionWithLine(
+            ref line,
+            character,
+            null,
+            ignoreCharacters: true
+        );
         return hit?.Entity switch
         {
             MyCubeBlock block => block.CubeGrid,
             MyCubeGrid grid => grid,
-            _ => null
+            _ => null,
         };
     }
 

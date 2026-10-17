@@ -38,7 +38,12 @@ public sealed class ShipFixerCore
         return FixGroups(groups, playerId);
     }
 
-    public static ShipFixerResult CheckGroups(List<MyCubeGrid> groups, out List<MyCubeGrid> group, long playerId, bool ejectPlayers = true)
+    public static ShipFixerResult CheckGroups(
+        List<MyCubeGrid> groups,
+        out List<MyCubeGrid> group,
+        long playerId,
+        bool ejectPlayers = true
+    )
     {
         group = groups;
 
@@ -65,7 +70,11 @@ public sealed class ShipFixerCore
 
             foreach (MyCubeGrid grid in groups)
             {
-                if (grid.Physics == null || grid == referenceGrid || grid.IsSameConstructAs(referenceGrid))
+                if (
+                    grid.Physics == null
+                    || grid == referenceGrid
+                    || grid.IsSameConstructAs(referenceGrid)
+                )
                     continue;
 
                 if (!OwnershipCorrect(grid, playerId))
@@ -74,13 +83,15 @@ public sealed class ShipFixerCore
         }
 
         long ownerId = groups[0].BigOwners?.FirstOrDefault() ?? 0;
-        MyFaction gridOwnerFaction = MySession.Static.Factions.TryGetPlayerFaction(ownerId) as MyFaction;
+        MyFaction gridOwnerFaction =
+            MySession.Static.Factions.TryGetPlayerFaction(ownerId) as MyFaction;
         bool gridOccupied = false;
 
         foreach (MyCubeGrid grid in groups)
         {
             List<IMyTerminalBlock> blocks = new List<IMyTerminalBlock>();
-            IMyGridTerminalSystem terminalSystem = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
+            IMyGridTerminalSystem terminalSystem =
+                MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             terminalSystem.GetBlocksOfType<Sandbox.ModAPI.IMyTerminalBlock>(blocks);
 
             foreach (IMyTerminalBlock block in blocks)
@@ -90,7 +101,11 @@ public sealed class ShipFixerCore
 
                 if (playerId == 0)
                 {
-                    if (ejectPlayers && controller.Pilot != null && controller is MyShipController shipController)
+                    if (
+                        ejectPlayers
+                        && controller.Pilot != null
+                        && controller is MyShipController shipController
+                    )
                         shipController.Use();
                     else
                         gridOccupied = true;
@@ -100,20 +115,30 @@ public sealed class ShipFixerCore
 
                 long? controllingIdentityId = controller.ControllerInfo?.ControllingIdentityId;
                 MyFaction controllingPlayerFaction = controllingIdentityId.HasValue
-                    ? MySession.Static.Factions.TryGetPlayerFaction(controllingIdentityId.Value) as MyFaction
+                    ? MySession.Static.Factions.TryGetPlayerFaction(controllingIdentityId.Value)
+                        as MyFaction
                     : null;
 
                 if (gridOwnerFaction != null && controllingPlayerFaction != null)
                 {
                     Tuple<MyRelationsBetweenFactions, int> relation =
-                        MySession.Static.Factions.GetRelationBetweenFactions(gridOwnerFaction.FactionId, controllingPlayerFaction.FactionId);
+                        MySession.Static.Factions.GetRelationBetweenFactions(
+                            gridOwnerFaction.FactionId,
+                            controllingPlayerFaction.FactionId
+                        );
 
-                    if (gridOwnerFaction.FactionId != controllingPlayerFaction.FactionId &&
-                        relation.Item1 == MyRelationsBetweenFactions.Enemies)
+                    if (
+                        gridOwnerFaction.FactionId != controllingPlayerFaction.FactionId
+                        && relation.Item1 == MyRelationsBetweenFactions.Enemies
+                    )
                         return ShipFixerResult.GridOccupied;
                 }
 
-                if (ejectPlayers && controller.Pilot != null && controller is MyShipController controlledBlock)
+                if (
+                    ejectPlayers
+                    && controller.Pilot != null
+                    && controller is MyShipController controlledBlock
+                )
                     controlledBlock.Use();
                 else
                     gridOccupied = true;
@@ -123,10 +148,16 @@ public sealed class ShipFixerCore
         if (!gridOccupied)
             return ShipFixerResult.OK;
 
-        return Plugin.Instance.Config.ShipFixerEjectPlayers ? ShipFixerResult.OK : ShipFixerResult.GridOccupied;
+        return Plugin.Instance.Config.ShipFixerEjectPlayers
+            ? ShipFixerResult.OK
+            : ShipFixerResult.GridOccupied;
     }
 
-    public static List<MyCubeGrid> FindLookAtGridGroup(IMyCharacter controlledEntity, long playerId, out ShipFixerResult result)
+    public static List<MyCubeGrid> FindLookAtGridGroup(
+        IMyCharacter controlledEntity,
+        long playerId,
+        out ShipFixerResult result
+    )
     {
         const float range = 5000;
         List<MyCubeGrid> gridsGroup = new List<MyCubeGrid>();
@@ -178,16 +209,28 @@ public sealed class ShipFixerCore
             return gridsGroup;
         }
 
-        result = foundWrongOwner ? ShipFixerResult.OwnedByDifferentPlayer : ShipFixerResult.GridNotFound;
+        result = foundWrongOwner
+            ? ShipFixerResult.OwnedByDifferentPlayer
+            : ShipFixerResult.GridNotFound;
         return gridsGroup;
     }
 
-    public static List<MyCubeGrid> FindGridGroupsForPlayer(string gridName, long playerId, out ShipFixerResult result, long id = 0)
+    public static List<MyCubeGrid> FindGridGroupsForPlayer(
+        string gridName,
+        long playerId,
+        out ShipFixerResult result,
+        long id = 0
+    )
     {
         List<MyCubeGrid> gridsGroup = new List<MyCubeGrid>();
         bool wrongOwner = false;
 
-        foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in MyCubeGridGroups.Static.Physical.Groups)
+        foreach (
+            MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in MyCubeGridGroups
+                .Static
+                .Physical
+                .Groups
+        )
         {
             foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Node node in group.Nodes)
             {
@@ -242,7 +285,9 @@ public sealed class ShipFixerCore
 
         IMyFaction playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
         IMyFaction ownerFaction = MySession.Static.Factions.TryGetPlayerFaction(gridOwner);
-        return playerFaction != null && ownerFaction != null && playerFaction.FactionId == ownerFaction.FactionId;
+        return playerFaction != null
+            && ownerFaction != null
+            && playerFaction.FactionId == ownerFaction.FactionId;
     }
 
     private ShipFixerResult FixGroups(List<MyCubeGrid> groups, long playerId)
@@ -250,11 +295,17 @@ public sealed class ShipFixerCore
         if (groups.Count == 0)
             return ShipFixerResult.GridNotFound;
 
-        ShipFixerResult result = CheckGroups(groups, out List<MyCubeGrid> group, playerId, Plugin.Instance.Config.ShipFixerEjectPlayers);
+        ShipFixerResult result = CheckGroups(
+            groups,
+            out List<MyCubeGrid> group,
+            playerId,
+            Plugin.Instance.Config.ShipFixerEjectPlayers
+        );
         if (result != ShipFixerResult.OK)
             return result;
 
-        MyIdentity executingPlayer = playerId == 0 ? null : MySession.Static.Players.TryGetIdentity(playerId);
+        MyIdentity executingPlayer =
+            playerId == 0 ? null : MySession.Static.Players.TryGetIdentity(playerId);
         return FixGroup(group, executingPlayer);
     }
 
@@ -291,7 +342,9 @@ public sealed class ShipFixerCore
 
         foreach (MyCubeGrid grid in gridsToClose)
         {
-            Plugin.Instance.Log.Warning($"Player {playerName} used ShipFixer on Grid {grid.DisplayName} for cut & paste.");
+            Plugin.Instance.Log.Warning(
+                $"Player {playerName} used ShipFixer on Grid {grid.DisplayName} for cut & paste."
+            );
             grid.Close();
         }
 
@@ -314,14 +367,21 @@ public sealed class ShipFixerCore
         output.Sort((left, right) => left.GridSizeEnum.CompareTo(right.GridSizeEnum));
     }
 
-    private static void SpawnObjectBuilders(List<MyObjectBuilder_EntityBase> objectBuilders, bool parallel)
+    private static void SpawnObjectBuilders(
+        List<MyObjectBuilder_EntityBase> objectBuilders,
+        bool parallel
+    )
     {
         MyAPIGateway.Entities.RemapObjectBuilderCollection(objectBuilders);
 
         if (parallel)
         {
             foreach (MyObjectBuilder_EntityBase objectBuilder in objectBuilders)
-                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(objectBuilder, true, OnEntitySpawned);
+                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(
+                    objectBuilder,
+                    true,
+                    OnEntitySpawned
+                );
 
             return;
         }

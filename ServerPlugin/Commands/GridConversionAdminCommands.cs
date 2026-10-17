@@ -20,7 +20,13 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public string AdminMakeShip(string gridName = null)
     {
-        if (!TryResolveConversionGroup(gridName, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        if (
+            !TryResolveConversionGroup(
+                gridName,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         int converted = 0;
@@ -39,7 +45,13 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public string AdminMakeStation(string gridName = null)
     {
-        if (!TryResolveConversionGroup(gridName, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        if (
+            !TryResolveConversionGroup(
+                gridName,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         int converted = 0;
@@ -66,11 +78,20 @@ public sealed partial class EssentialsModule
         if (character == null)
             return null;
 
-        if (MyGravityProviderSystem.IsPositionInNaturalGravity(character.PositionComp.GetPosition()))
+        if (
+            MyGravityProviderSystem.IsPositionInNaturalGravity(character.PositionComp.GetPosition())
+        )
             return "You cannot use this command in natural gravity.";
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups = GridGroupFinder.FindLookAtGridGroup(character);
-        if (!TryGetSingleGroup(groups, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups =
+            GridGroupFinder.FindLookAtGridGroup(character);
+        if (
+            !TryGetSingleGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         List<MyCubeGrid> grids = GetConversionGrids(group).ToList();
@@ -96,7 +117,9 @@ public sealed partial class EssentialsModule
         if (grids.Any(grid => grid.GridSizeEnum == MyCubeSize.Small))
             return "Small grids cannot be converted to stations.";
 
-        MyCubeGrid fastGrid = grids.FirstOrDefault(grid => grid.Physics != null && grid.Physics.Speed > 10f);
+        MyCubeGrid fastGrid = grids.FirstOrDefault(grid =>
+            grid.Physics != null && grid.Physics.Speed > 10f
+        );
         if (fastGrid != null)
             return $"{fastGrid.DisplayName} is moving too fast to convert.";
 
@@ -121,8 +144,15 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups = GridGroupFinder.FindGridGroup(gridName);
-        if (!TryGetSingleGroup(groups, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups =
+            GridGroupFinder.FindGridGroup(gridName);
+        if (
+            !TryGetSingleGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
         {
             Context.Respond(error);
             return;
@@ -144,7 +174,13 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.None)]
     public string GridType(string gridName = null)
     {
-        if (!TryResolveConversionGroup(gridName, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        if (
+            !TryResolveConversionGroup(
+                gridName,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         StringBuilder sb = new StringBuilder();
@@ -157,7 +193,8 @@ public sealed partial class EssentialsModule
     private bool TryResolveConversionGroup(
         string gridName,
         out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
-        out string error)
+        out string error
+    )
     {
         ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups;
         if (string.IsNullOrWhiteSpace(gridName))
@@ -180,8 +217,7 @@ public sealed partial class EssentialsModule
         return TryGetSingleGroup(groups, out group, out error);
     }
 
-    private static IEnumerable<MyCubeGrid> GetConversionGrids(MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group)
-        => group.Nodes
-            .Select(node => node.NodeData)
-            .Where(IsUsableGrid);
+    private static IEnumerable<MyCubeGrid> GetConversionGrids(
+        MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group
+    ) => group.Nodes.Select(node => node.NodeData).Where(IsUsableGrid);
 }

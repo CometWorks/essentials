@@ -112,7 +112,11 @@ internal sealed class RunningSequence
 
         if (shellTimeout > TimeSpan.Zero && now - shellStartedAt >= shellTimeout)
         {
-            executor.Log.Warning("Auto command '{0}' step {1}: shell script timed out", Name, index);
+            executor.Log.Warning(
+                "Auto command '{0}' step {1}: shell script timed out",
+                Name,
+                index
+            );
             try
             {
                 shellProcess?.Kill();
@@ -132,11 +136,7 @@ internal sealed class RunningSequence
     {
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            };
+            var psi = new ProcessStartInfo { UseShellExecute = false, CreateNoWindow = true };
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -155,14 +155,20 @@ internal sealed class RunningSequence
 
             shellRunning = true;
             shellStartedAt = now;
-            shellTimeout = step.ShellTimeoutSeconds > 0
-                ? TimeSpan.FromSeconds(step.ShellTimeoutSeconds)
-                : TimeSpan.Zero; // 0 = wait indefinitely
+            shellTimeout =
+                step.ShellTimeoutSeconds > 0
+                    ? TimeSpan.FromSeconds(step.ShellTimeoutSeconds)
+                    : TimeSpan.Zero; // 0 = wait indefinitely
             return true;
         }
         catch (Exception e)
         {
-            executor.Log.Error(e, "Auto command '{0}' step {1}: failed to start shell script", Name, index);
+            executor.Log.Error(
+                e,
+                "Auto command '{0}' step {1}: failed to start shell script",
+                Name,
+                index
+            );
             DisposeShell();
             return false;
         }
@@ -183,9 +189,8 @@ internal sealed class RunningSequence
         shellRunning = false;
     }
 
-    private static string ShQuote(string s)
-        => "'" + s.Replace("'", "'\\''") + "'";
+    private static string ShQuote(string s) => "'" + s.Replace("'", "'\\''") + "'";
 
-    private static TimeSpan ParseSpan(string text)
-        => TimeSpan.TryParse(text, out TimeSpan span) && span > TimeSpan.Zero ? span : TimeSpan.Zero;
+    private static TimeSpan ParseSpan(string text) =>
+        TimeSpan.TryParse(text, out TimeSpan span) && span > TimeSpan.Zero ? span : TimeSpan.Zero;
 }

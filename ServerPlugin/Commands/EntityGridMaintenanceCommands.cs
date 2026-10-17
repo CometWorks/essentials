@@ -25,18 +25,29 @@ namespace ServerPlugin.Commands;
 
 public sealed partial class EssentialsModule
 {
-    private static readonly Dictionary<ulong, DateTime> EntityRefreshCooldowns = new Dictionary<ulong, DateTime>();
-    private static readonly FieldInfo ReplicationClientStatesField = typeof(MyReplicationServer).GetField("m_clientStates", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly MethodInfo ReplicationRemoveForClientMethod = typeof(MyReplicationServer)
-        .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-        .FirstOrDefault(method => method.Name == "RemoveForClient" && method.GetParameters().Length == 3);
-    private static readonly MethodInfo ReplicationForceReplicableMethod = typeof(MyReplicationServer)
-        .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-        .FirstOrDefault(method =>
-        {
-            ParameterInfo[] parameters = method.GetParameters();
-            return method.Name == "ForceReplicable" && parameters.Length == 2 && parameters[1].ParameterType == typeof(Endpoint);
-        });
+    private static readonly Dictionary<ulong, DateTime> EntityRefreshCooldowns =
+        new Dictionary<ulong, DateTime>();
+    private static readonly FieldInfo ReplicationClientStatesField =
+        typeof(MyReplicationServer).GetField(
+            "m_clientStates",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
+    private static readonly MethodInfo ReplicationRemoveForClientMethod =
+        typeof(MyReplicationServer)
+            .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+            .FirstOrDefault(method =>
+                method.Name == "RemoveForClient" && method.GetParameters().Length == 3
+            );
+    private static readonly MethodInfo ReplicationForceReplicableMethod =
+        typeof(MyReplicationServer)
+            .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+            .FirstOrDefault(method =>
+            {
+                ParameterInfo[] parameters = method.GetParameters();
+                return method.Name == "ForceReplicable"
+                    && parameters.Length == 2
+                    && parameters[1].ParameterType == typeof(Endpoint);
+            });
 
     [Command("entities refresh", "Resync all entities for the caller.")]
     [Permission(MyPromoteLevel.None)]
@@ -55,11 +66,14 @@ public sealed partial class EssentialsModule
 
         EntityRefreshCooldowns[Context.Caller.SteamId] = now;
 
-        MyReplicationServer replicationServer = MyMultiplayer.ReplicationLayer as MyReplicationServer;
-        if (replicationServer == null ||
-            ReplicationClientStatesField == null ||
-            ReplicationRemoveForClientMethod == null ||
-            ReplicationForceReplicableMethod == null)
+        MyReplicationServer replicationServer =
+            MyMultiplayer.ReplicationLayer as MyReplicationServer;
+        if (
+            replicationServer == null
+            || ReplicationClientStatesField == null
+            || ReplicationRemoveForClientMethod == null
+            || ReplicationForceReplicableMethod == null
+        )
             return "Replication refresh is not available.";
 
         Endpoint endpoint = new Endpoint(Context.Caller.SteamId, 0);
@@ -73,7 +87,9 @@ public sealed partial class EssentialsModule
             return "Could not find your replication client state.";
 
         object client = args[1];
-        FieldInfo replicablesField = client.GetType().GetField("Replicables", BindingFlags.Public | BindingFlags.Instance);
+        FieldInfo replicablesField = client
+            .GetType()
+            .GetField("Replicables", BindingFlags.Public | BindingFlags.Instance);
         if (replicablesField?.GetValue(client) is not IEnumerable replicables)
             return "Could not enumerate client replicables.";
 
@@ -87,8 +103,14 @@ public sealed partial class EssentialsModule
 
         foreach (IMyReplicable replicable in list)
         {
-            ReplicationRemoveForClientMethod.Invoke(replicationServer, new object[] { replicable, client, true });
-            ReplicationForceReplicableMethod.Invoke(replicationServer, new object[] { replicable, endpoint });
+            ReplicationRemoveForClientMethod.Invoke(
+                replicationServer,
+                new object[] { replicable, client, true }
+            );
+            ReplicationForceReplicableMethod.Invoke(
+                replicationServer,
+                new object[] { replicable, endpoint }
+            );
         }
 
         return $"Forced replication of {list.Count:#,##0} entities.";
@@ -98,10 +120,18 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.SpaceMaster)]
     public string EntitiesKill(string playerName)
     {
-        if (Utilities.GetPlayerByNameOrId(playerName) is MyPlayer player && player.Identity?.IdentityId != 0)
+        if (
+            Utilities.GetPlayerByNameOrId(playerName) is MyPlayer player
+            && player.Identity?.IdentityId != 0
+        )
         {
             MyVisualScriptLogicProvider.SetPlayersHealth(player.Identity.IdentityId, 0);
-            MyVisualScriptLogicProvider.SendChatMessage($"{player.DisplayName} was killed by an admin", "Server", 0L, MyFontEnum.White);
+            MyVisualScriptLogicProvider.SendChatMessage(
+                $"{player.DisplayName} was killed by an admin",
+                "Server",
+                0L,
+                MyFontEnum.White
+            );
             return $"Killed {player.DisplayName}.";
         }
 
@@ -112,7 +142,12 @@ public sealed partial class EssentialsModule
             return $"Entity '{EntityDisplayName(entity)}' is not a character.";
 
         destroyable.DoDamage(1000f, MyDamageType.Radioactivity, true);
-        MyVisualScriptLogicProvider.SendChatMessage($"{EntityDisplayName(entity)} was killed by an admin", "Server", 0L, MyFontEnum.White);
+        MyVisualScriptLogicProvider.SendChatMessage(
+            $"{EntityDisplayName(entity)} was killed by an admin",
+            "Server",
+            0L,
+            MyFontEnum.White
+        );
         return $"Killed {EntityDisplayName(entity)}.";
     }
 
@@ -131,7 +166,11 @@ public sealed partial class EssentialsModule
         }
 
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
-        bool saved = MyObjectBuilderSerializerKeen.SerializeXML(path, false, grid.GetObjectBuilder());
+        bool saved = MyObjectBuilderSerializerKeen.SerializeXML(
+            path,
+            false,
+            grid.GetObjectBuilder()
+        );
         Context.Respond(saved ? $"Grid saved to {path}" : "Grid export failed.");
     }
 
@@ -159,11 +198,15 @@ public sealed partial class EssentialsModule
             return "Grid import failed.";
 
         MyEntities.RemapObjectBuilder(grid);
-        Vector3D? position = FindFreePlaceNear(target.GetPosition(), grid.CalculateBoundingSphere().Radius);
+        Vector3D? position = FindFreePlaceNear(
+            target.GetPosition(),
+            grid.CalculateBoundingSphere().Radius
+        );
         if (position == null)
             return "No free place.";
 
-        MyPositionAndOrientation orientation = grid.PositionAndOrientation ?? new MyPositionAndOrientation();
+        MyPositionAndOrientation orientation =
+            grid.PositionAndOrientation ?? new MyPositionAndOrientation();
         orientation.Position = position.Value;
         grid.PositionAndOrientation = orientation;
         MyEntities.CreateFromObjectBuilderParallel(grid, true);
@@ -176,15 +219,26 @@ public sealed partial class EssentialsModule
         if (!fileName.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase))
             fileName += ".xml";
 
-        return System.IO.Path.Combine(MyFileSystem.UserDataPath, "Essentials", "ExportedGrids", fileName);
+        return System.IO.Path.Combine(
+            MyFileSystem.UserDataPath,
+            "Essentials",
+            "ExportedGrids",
+            fileName
+        );
     }
 
     private static string SafeFileStem(string value)
     {
-        string fileName = System.IO.Path.GetFileName(string.IsNullOrWhiteSpace(value) ? "grid" : value.Trim());
+        string fileName = System.IO.Path.GetFileName(
+            string.IsNullOrWhiteSpace(value) ? "grid" : value.Trim()
+        );
         char[] invalid = System.IO.Path.GetInvalidFileNameChars();
-        string sanitized = new string(fileName.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray());
-        return string.IsNullOrWhiteSpace(sanitized) ? DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture) : sanitized;
+        string sanitized = new string(
+            fileName.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()
+        );
+        return string.IsNullOrWhiteSpace(sanitized)
+            ? DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)
+            : sanitized;
     }
 
     private static Vector3D? FindFreePlaceNear(Vector3D position, float radius)

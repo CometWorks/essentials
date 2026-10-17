@@ -19,25 +19,29 @@ public static class ChatMutePatch
         try
         {
             ChatChannel channel = (ChatChannel)msg.Channel;
-            if (channel != ChatChannel.Global &&
-                channel != ChatChannel.Faction &&
-                channel != ChatChannel.Private)
+            if (
+                channel != ChatChannel.Global
+                && channel != ChatChannel.Faction
+                && channel != ChatChannel.Private
+            )
                 return true;
 
             ulong steamId = MyEventContext.Current.Sender.Value;
             if (steamId == 0 || !ChatMuteService.IsMuted(steamId, out ChatMuteRecord record))
                 return true;
 
-            long identityId = record.IdentityId != 0
-                ? record.IdentityId
-                : MySession.Static?.Players?.TryGetIdentityId(steamId) ?? 0;
+            long identityId =
+                record.IdentityId != 0
+                    ? record.IdentityId
+                    : MySession.Static?.Players?.TryGetIdentityId(steamId) ?? 0;
 
             if (identityId != 0)
                 MyVisualScriptLogicProvider.SendChatMessage(
                     "You are muted in chat.",
                     Plugin.Name,
                     identityId,
-                    MyFontEnum.Red);
+                    MyFontEnum.Red
+                );
 
             return false;
         }

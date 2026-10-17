@@ -15,7 +15,9 @@ public sealed class VanillaLimitsChecker
         if (MySession.Static.BlockLimitsEnabled == MyBlockLimitsEnabledEnum.NONE)
             return response;
 
-        Dictionary<string, short> limits = new Dictionary<string, short>(MySession.Static.BlockTypeLimits);
+        Dictionary<string, short> limits = new Dictionary<string, short>(
+            MySession.Static.BlockTypeLimits
+        );
         MyBlockLimits blockLimits = newAuthor.BlockLimits;
 
         response.CurrentPcu = blockLimits.PCUBuilt;

@@ -16,7 +16,11 @@ public static class InfoCommandPatch
     public static bool Prefix(ChatMsg msg)
     {
         ChatChannel channel = (ChatChannel)msg.Channel;
-        if (channel != ChatChannel.Global && channel != ChatChannel.Faction && channel != ChatChannel.Private)
+        if (
+            channel != ChatChannel.Global
+            && channel != ChatChannel.Faction
+            && channel != ChatChannel.Private
+        )
             return true;
 
         if (string.IsNullOrEmpty(msg.Text) || msg.Text[0] != '!')

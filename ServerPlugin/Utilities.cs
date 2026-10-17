@@ -18,7 +18,13 @@ public static class Utilities
 
         foreach (IMyEntity ent in MyEntities.GetEntities())
         {
-            if (string.Equals(ent.DisplayName, nameOrId, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                string.Equals(
+                    ent.DisplayName,
+                    nameOrId,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
             {
                 entity = ent;
                 return true;
@@ -33,13 +39,25 @@ public static class Utilities
     {
         foreach (IMyIdentity identity in MySession.Static.Players.GetAllIdentities())
         {
-            if (string.Equals(identity.DisplayName, playerNameOrIds, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                string.Equals(
+                    identity.DisplayName,
+                    playerNameOrIds,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
                 return identity;
 
-            if (long.TryParse(playerNameOrIds, out long identityId) && identity.IdentityId == identityId)
+            if (
+                long.TryParse(playerNameOrIds, out long identityId)
+                && identity.IdentityId == identityId
+            )
                 return identity;
 
-            if (ulong.TryParse(playerNameOrIds, out ulong steamId) && GetSteamId(identity.IdentityId) == steamId)
+            if (
+                ulong.TryParse(playerNameOrIds, out ulong steamId)
+                && GetSteamId(identity.IdentityId) == steamId
+            )
                 return identity;
         }
 
@@ -52,13 +70,21 @@ public static class Utilities
         {
             foreach (IMyIdentity identity in MySession.Static.Players.GetAllIdentities())
             {
-                if (string.Equals(identity.DisplayName, nameOrPlayerId, StringComparison.InvariantCultureIgnoreCase))
+                if (
+                    string.Equals(
+                        identity.DisplayName,
+                        nameOrPlayerId,
+                        StringComparison.InvariantCultureIgnoreCase
+                    )
+                )
                     id = identity.IdentityId;
             }
         }
 
-        if (MySession.Static.Players.TryGetPlayerId(id, out MyPlayer.PlayerId playerId) &&
-            MySession.Static.Players.TryGetPlayerById(playerId, out MyPlayer player))
+        if (
+            MySession.Static.Players.TryGetPlayerId(id, out MyPlayer.PlayerId playerId)
+            && MySession.Static.Players.TryGetPlayerById(playerId, out MyPlayer player)
+        )
             return player;
 
         return null;
@@ -66,8 +92,10 @@ public static class Utilities
 
     public static MyPlayer GetPlayerByIdentityId(long identityId)
     {
-        if (MySession.Static.Players.TryGetPlayerId(identityId, out MyPlayer.PlayerId playerId) &&
-            MySession.Static.Players.TryGetPlayerById(playerId, out MyPlayer player))
+        if (
+            MySession.Static.Players.TryGetPlayerId(identityId, out MyPlayer.PlayerId playerId)
+            && MySession.Static.Players.TryGetPlayerById(playerId, out MyPlayer player)
+        )
             return player;
 
         return null;
@@ -79,15 +107,17 @@ public static class Utilities
         return identity?.DisplayName ?? identityId.ToString();
     }
 
-    public static ulong GetSteamId(long identityId)
-        => MySession.Static.Players.TryGetSteamId(identityId);
+    public static ulong GetSteamId(long identityId) =>
+        MySession.Static.Players.TryGetSteamId(identityId);
 
-    public static int GetOnlinePlayerCount()
-        => MySession.Static.Players.GetOnlinePlayers()
+    public static int GetOnlinePlayerCount() =>
+        MySession
+            .Static.Players.GetOnlinePlayers()
             .Count(player => player.IsRealPlayer && !string.IsNullOrEmpty(player.DisplayName));
 
-    public static List<MyPlayer> GetOnlinePlayers()
-        => MySession.Static.Players.GetOnlinePlayers()
+    public static List<MyPlayer> GetOnlinePlayers() =>
+        MySession
+            .Static.Players.GetOnlinePlayers()
             .Where(player => player.IsRealPlayer && !string.IsNullOrEmpty(player.DisplayName))
             .ToList();
 }
