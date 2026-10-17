@@ -107,9 +107,12 @@ class Game:
         homes = [(p.steam_id, *session.home_of(p)) for p in (self.a, self.b)]
         for _ in range(5):
             reply = self.a.probe("reset", *homes[0], *homes[1])
-            if reply != "Probe reset: again":
+            if not reply.startswith("Probe reset: seated="):
                 break
-            # A player was in a seat; the reset got them out
+            seated = reply.removeprefix("Probe reset: seated=").split(",")
+            for player in (self.a, self.b):
+                if str(player.steam_id) in seated:
+                    player.api.character_use()
             time.sleep(2)
         assert reply.startswith("Probe reset: moved="), reply
         if reply != "Probe reset: moved=0":

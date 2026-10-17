@@ -259,12 +259,16 @@ public sealed class ProbeCommands : CommandModule
         double bz
     )
     {
+        // The players' clients get out of their seats themselves. After an eject on
+        // the server, the plugin's look notices sometimes missed the player.
+        ulong[] seated = new[] { steamA, steamB }
+            .Where(id => OnlinePlayer(id)?.Controller?.ControlledEntity is MyShipController)
+            .ToArray();
+        if (seated.Length > 0)
+            return Ok("reset", "seated=" + string.Join(",", seated));
+
         Reload();
         Forget();
-        bool seated = new[] { steamA, steamB }.Any(id =>
-            OnlinePlayer(id)?.Controller?.ControlledEntity is MyShipController
-        );
-        // Ejects the pilots too
         Clear();
         // Characters a player left behind, like Delta's from the new-player MOTD test
         var ours = new HashSet<MyCharacter>(
@@ -282,10 +286,6 @@ public sealed class ProbeCommands : CommandModule
             foreach (IMyGps gps in MyAPIGateway.Session.GPS.GetGpsList(identityId))
                 MyAPIGateway.Session.GPS.RemoveGps(identityId, gps);
         }
-        // A character just out of a seat needs a moment before it can be teleported
-        if (seated)
-            return Ok("reset", "again");
-
         int moved = Home(steamA, new Vector3D(ax, ay, az)) + Home(steamB, new Vector3D(bx, by, bz));
         return Ok("reset", $"moved={moved}");
     }
