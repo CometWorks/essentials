@@ -30,7 +30,8 @@ public sealed partial class EssentialsModule
         public HashSet<long> GridEntityIds { get; } = new HashSet<long>();
     }
 
-    private static readonly Dictionary<long, GridSaleOffer> GridSaleOffers = new Dictionary<long, GridSaleOffer>();
+    private static readonly Dictionary<long, GridSaleOffer> GridSaleOffers =
+        new Dictionary<long, GridSaleOffer>();
 
     [Command("claim", "Claim a faction-shared looked-at grid group.")]
     [Permission(MyPromoteLevel.None)]
@@ -48,25 +49,47 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups = GridGroupFinder.FindLookAtMechanicalGridGroup(character);
-        if (!TryGetSingleMechanicalGroup(groups, out MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group, out string error))
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups =
+            GridGroupFinder.FindLookAtMechanicalGridGroup(character);
+        if (
+            !TryGetSingleMechanicalGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group,
+                out string error
+            )
+        )
         {
             Context.Respond(error);
             return;
         }
 
-        List<MyCubeGrid> grids = group.Nodes.Select(node => node.NodeData).Where(IsUsableGrid).ToList();
-        if (!TryValidateGridAccess(identityId, grids, out int accessibleBlocks, out int ownedBlocks, out error))
+        List<MyCubeGrid> grids = group
+            .Nodes.Select(node => node.NodeData)
+            .Where(IsUsableGrid)
+            .ToList();
+        if (
+            !TryValidateGridAccess(
+                identityId,
+                grids,
+                out int accessibleBlocks,
+                out int ownedBlocks,
+                out error
+            )
+        )
         {
             Context.Respond(error);
             return;
         }
 
-        MyOwnershipShareModeEnum shareMode = shareWithFaction ? MyOwnershipShareModeEnum.Faction : MyOwnershipShareModeEnum.None;
+        MyOwnershipShareModeEnum shareMode = shareWithFaction
+            ? MyOwnershipShareModeEnum.Faction
+            : MyOwnershipShareModeEnum.None;
         foreach (MyCubeGrid grid in grids)
             grid.ChangeGridOwnership(identityId, shareMode);
 
-        Context.Respond($"Claimed {grids.Count:#,##0} grid(s). Accessible owned blocks: {accessibleBlocks:#,##0}/{ownedBlocks:#,##0}.");
+        Context.Respond(
+            $"Claimed {grids.Count:#,##0} grid(s). Accessible owned blocks: {accessibleBlocks:#,##0}/{ownedBlocks:#,##0}."
+        );
     }
 
     [Command("sellgrid", "Offer the looked-at grid group to a nearby player.")]
@@ -83,20 +106,37 @@ public sealed partial class EssentialsModule
         if (character == null)
             return;
 
-        if (!TryFindNearbySaleTarget(character, Context.Caller.IdentityId, out MyIdentity buyer, out error))
+        if (
+            !TryFindNearbySaleTarget(
+                character,
+                Context.Caller.IdentityId,
+                out MyIdentity buyer,
+                out error
+            )
+        )
         {
             Context.Respond(error);
             return;
         }
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups = GridGroupFinder.FindLookAtMechanicalGridGroup(character);
-        if (!TryGetSingleMechanicalGroup(groups, out MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group, out error))
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups =
+            GridGroupFinder.FindLookAtMechanicalGridGroup(character);
+        if (
+            !TryGetSingleMechanicalGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group,
+                out error
+            )
+        )
         {
             Context.Respond(error);
             return;
         }
 
-        List<MyCubeGrid> grids = group.Nodes.Select(node => node.NodeData).Where(IsUsableGrid).ToList();
+        List<MyCubeGrid> grids = group
+            .Nodes.Select(node => node.NodeData)
+            .Where(IsUsableGrid)
+            .ToList();
         if (!TryValidateGridAccess(Context.Caller.IdentityId, grids, out _, out _, out error))
         {
             Context.Respond(error);
@@ -114,20 +154,25 @@ public sealed partial class EssentialsModule
         {
             BuyerIdentityId = buyer.IdentityId,
             SellerIdentityId = Context.Caller.IdentityId,
-            SellerName = string.IsNullOrWhiteSpace(Context.Caller.Name) ? Utilities.GetPlayerNameById(Context.Caller.IdentityId) : Context.Caller.Name,
+            SellerName = string.IsNullOrWhiteSpace(Context.Caller.Name)
+                ? Utilities.GetPlayerNameById(Context.Caller.IdentityId)
+                : Context.Caller.Name,
             Price = price,
-            ExpiresAt = DateTime.UtcNow.AddSeconds(30)
+            ExpiresAt = DateTime.UtcNow.AddSeconds(30),
         };
         foreach (MyCubeGrid grid in grids)
             offer.GridEntityIds.Add(grid.EntityId);
 
         GridSaleOffers[buyer.IdentityId] = offer;
 
-        Context.Respond($"Offer to sell {grids.Count:#,##0} grid(s) sent to {buyer.DisplayName} for {FormatCredits(price)} credits. Offer is active for 30 seconds.");
+        Context.Respond(
+            $"Offer to sell {grids.Count:#,##0} grid(s) sent to {buyer.DisplayName} for {FormatCredits(price)} credits. Offer is active for 30 seconds."
+        );
         SendPrivateChat(
             buyer.IdentityId,
             $"{offer.SellerName} wants to sell you {grids.Count:#,##0} grid(s) for {FormatCredits(price)} credits. Use !ess acceptgrid within 30 seconds.",
-            Color.Cyan);
+            Color.Cyan
+        );
     }
 
     [Command("denygrid", "Deny a pending grid sale offer.")]
@@ -147,7 +192,11 @@ public sealed partial class EssentialsModule
         }
 
         Context.Respond("Denied the offer.");
-        SendPrivateChat(offer.SellerIdentityId, "Player denied your offer to sell grid.", Color.Red);
+        SendPrivateChat(
+            offer.SellerIdentityId,
+            "Player denied your offer to sell grid.",
+            Color.Red
+        );
     }
 
     [Command("acceptgrid", "Accept a pending grid sale offer.")]
@@ -173,13 +222,22 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        if (!TryResolveSaleGroups(offer, out List<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> physicalGroups, out string error))
+        if (
+            !TryResolveSaleGroups(
+                offer,
+                out List<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> physicalGroups,
+                out string error
+            )
+        )
         {
             Context.Respond(error);
             return;
         }
 
-        List<MyCubeGrid> grids = physicalGroups.SelectMany(group => group.Nodes.Select(node => node.NodeData)).Where(IsUsableGrid).ToList();
+        List<MyCubeGrid> grids = physicalGroups
+            .SelectMany(group => group.Nodes.Select(node => node.NodeData))
+            .Where(IsUsableGrid)
+            .ToList();
         if (!TryValidateGridAccess(offer.SellerIdentityId, grids, out _, out _, out error))
         {
             Context.Respond("Seller no longer has access to transfer this grid group: " + error);
@@ -188,16 +246,34 @@ public sealed partial class EssentialsModule
 
         foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in physicalGroups)
         {
-            ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> single = new ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
+            ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> single =
+                new ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
             single.Add(group);
-            if (!PcuTransferCoreInstance.TryGetTransferGroup(single, buyer, pcu: true, force: false, out _, out error))
+            if (
+                !PcuTransferCoreInstance.TryGetTransferGroup(
+                    single,
+                    buyer,
+                    pcu: true,
+                    force: false,
+                    out _,
+                    out error
+                )
+            )
             {
                 Context.Respond(error);
                 return;
             }
         }
 
-        if (offer.Price > 0 && !TryTransferCredits(Context.Caller.IdentityId, offer.SellerIdentityId, offer.Price, out error))
+        if (
+            offer.Price > 0
+            && !TryTransferCredits(
+                Context.Caller.IdentityId,
+                offer.SellerIdentityId,
+                offer.Price,
+                out error
+            )
+        )
         {
             Context.Respond(error);
             return;
@@ -206,8 +282,14 @@ public sealed partial class EssentialsModule
         foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in physicalGroups)
             PcuTransferCoreInstance.Transfer(group, buyer, pcu: true, ownership: true);
 
-        Context.Respond($"Accepted the offer. Transferred {physicalGroups.Count:#,##0} physical grid group(s).");
-        SendPrivateChat(offer.SellerIdentityId, "Player accepted your offer to sell grid.", Color.Cyan);
+        Context.Respond(
+            $"Accepted the offer. Transferred {physicalGroups.Count:#,##0} physical grid group(s)."
+        );
+        SendPrivateChat(
+            offer.SellerIdentityId,
+            "Player accepted your offer to sell grid.",
+            Color.Cyan
+        );
     }
 
     [Command("pcucount", "Count PCU on the looked-at connected grid group.")]
@@ -218,15 +300,27 @@ public sealed partial class EssentialsModule
         if (character == null)
             return null;
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups = GridGroupFinder.FindLookAtGridGroup(character);
-        if (!TryGetSingleGroup(groups, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups =
+            GridGroupFinder.FindLookAtGridGroup(character);
+        if (
+            !TryGetSingleGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
             return error;
 
         long totalPcu = 0;
         long projectedPcu = 0;
         StringBuilder sb = new StringBuilder();
         sb.AppendLine("Grid PCU:");
-        foreach (MyCubeGrid grid in group.Nodes.Select(node => node.NodeData).Where(IsUsableGrid).OrderBy(grid => grid.DisplayName))
+        foreach (
+            MyCubeGrid grid in group
+                .Nodes.Select(node => node.NodeData)
+                .Where(IsUsableGrid)
+                .OrderBy(grid => grid.DisplayName)
+        )
         {
             totalPcu += grid.BlocksPCU;
             long gridProjectedPcu = CountProjectedPcu(grid);
@@ -260,24 +354,48 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups = GridGroupFinder.FindGridGroup(gridName);
-        if (!TryGetSingleGroup(groups, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups =
+            GridGroupFinder.FindGridGroup(gridName);
+        if (
+            !TryGetSingleGroup(
+                groups,
+                out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                out string error
+            )
+        )
         {
             Context.Respond(error);
             return;
         }
 
-        MyCubeGrid grid = group.Nodes.Select(node => node.NodeData)
-            .FirstOrDefault(candidate => IsUsableGrid(candidate) &&
-                                         (string.Equals(candidate.DisplayName, gridName, StringComparison.InvariantCultureIgnoreCase) ||
-                                          candidate.EntityId.ToString(CultureInfo.InvariantCulture) == gridName));
+        MyCubeGrid grid = group
+            .Nodes.Select(node => node.NodeData)
+            .FirstOrDefault(candidate =>
+                IsUsableGrid(candidate)
+                && (
+                    string.Equals(
+                        candidate.DisplayName,
+                        gridName,
+                        StringComparison.InvariantCultureIgnoreCase
+                    )
+                    || candidate.EntityId.ToString(CultureInfo.InvariantCulture) == gridName
+                )
+            );
         if (grid == null)
         {
             Context.Respond("Could not find that grid.");
             return;
         }
 
-        if (!TryValidateGridAccess(Context.Caller.IdentityId, new[] { grid }, out _, out _, out error))
+        if (
+            !TryValidateGridAccess(
+                Context.Caller.IdentityId,
+                new[] { grid },
+                out _,
+                out _,
+                out error
+            )
+        )
         {
             Context.Respond(error);
             return;
@@ -291,7 +409,8 @@ public sealed partial class EssentialsModule
     private static bool TryGetSingleMechanicalGroup(
         ConcurrentBag<MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group> groups,
         out MyGroups<MyCubeGrid, MyGridMechanicalGroupData>.Group group,
-        out string error)
+        out string error
+    )
     {
         if (groups.Count < 1)
         {
@@ -317,7 +436,13 @@ public sealed partial class EssentialsModule
         return true;
     }
 
-    private static bool TryValidateGridAccess(long identityId, IEnumerable<MyCubeGrid> grids, out int accessibleBlocks, out int ownedBlocks, out string error)
+    private static bool TryValidateGridAccess(
+        long identityId,
+        IEnumerable<MyCubeGrid> grids,
+        out int accessibleBlocks,
+        out int ownedBlocks,
+        out string error
+    )
     {
         accessibleBlocks = 0;
         ownedBlocks = 0;
@@ -345,14 +470,20 @@ public sealed partial class EssentialsModule
                     continue;
 
                 ownedBlocks++;
-                MyRelationsBetweenPlayerAndBlock relation = fatBlock.GetUserRelationToOwner(identityId);
-                if (relation == MyRelationsBetweenPlayerAndBlock.Owner || relation == MyRelationsBetweenPlayerAndBlock.FactionShare)
+                MyRelationsBetweenPlayerAndBlock relation = fatBlock.GetUserRelationToOwner(
+                    identityId
+                );
+                if (
+                    relation == MyRelationsBetweenPlayerAndBlock.Owner
+                    || relation == MyRelationsBetweenPlayerAndBlock.FactionShare
+                )
                 {
                     accessibleBlocks++;
                     continue;
                 }
 
-                error = $"Not enough shared ownership on '{grid.DisplayName}'. Accessible owned blocks: {accessibleBlocks:#,##0}/{ownedBlocks:#,##0}.";
+                error =
+                    $"Not enough shared ownership on '{grid.DisplayName}'. Accessible owned blocks: {accessibleBlocks:#,##0}/{ownedBlocks:#,##0}.";
                 return false;
             }
         }
@@ -367,14 +498,27 @@ public sealed partial class EssentialsModule
         return true;
     }
 
-    private static bool TryFindNearbySaleTarget(MyCharacter sellerCharacter, long sellerIdentityId, out MyIdentity buyer, out string error)
+    private static bool TryFindNearbySaleTarget(
+        MyCharacter sellerCharacter,
+        long sellerIdentityId,
+        out MyIdentity buyer,
+        out string error
+    )
     {
-        BoundingSphereD sphere = new BoundingSphereD(sellerCharacter.PositionComp.GetPosition(), 10);
-        List<MyIdentity> nearbyPlayers = MyEntities.GetEntitiesInSphere(ref sphere)
+        BoundingSphereD sphere = new BoundingSphereD(
+            sellerCharacter.PositionComp.GetPosition(),
+            10
+        );
+        List<MyIdentity> nearbyPlayers = MyEntities
+            .GetEntitiesInSphere(ref sphere)
             .OfType<MyCharacter>()
             .Where(character => character != sellerCharacter && character.ControlSteamId != 0)
             .Select(character => character.GetPlayerIdentityId())
-            .Where(identityId => identityId != 0 && identityId != sellerIdentityId && !MySession.Static.Players.IdentityIsNpc(identityId))
+            .Where(identityId =>
+                identityId != 0
+                && identityId != sellerIdentityId
+                && !MySession.Static.Players.IdentityIsNpc(identityId)
+            )
             .Distinct()
             .Select(identityId => MySession.Static.Players.TryGetIdentity(identityId))
             .Where(identity => identity != null)
@@ -412,22 +556,38 @@ public sealed partial class EssentialsModule
     private static void RemoveExpiredGridSaleOffers()
     {
         DateTime now = DateTime.UtcNow;
-        foreach (long buyerIdentityId in GridSaleOffers.Where(pair => pair.Value.ExpiresAt < now).Select(pair => pair.Key).ToList())
+        foreach (
+            long buyerIdentityId in GridSaleOffers
+                .Where(pair => pair.Value.ExpiresAt < now)
+                .Select(pair => pair.Key)
+                .ToList()
+        )
             GridSaleOffers.Remove(buyerIdentityId);
     }
 
     private static bool TryResolveSaleGroups(
         GridSaleOffer offer,
         out List<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups,
-        out string error)
+        out string error
+    )
     {
         groups = new List<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group>();
         HashSet<long> missing = new HashSet<long>(offer.GridEntityIds);
 
-        foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in MyCubeGridGroups.Static.Physical.Groups)
+        foreach (
+            MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group in MyCubeGridGroups
+                .Static
+                .Physical
+                .Groups
+        )
         {
-            List<MyCubeGrid> groupGrids = group.Nodes.Select(node => node.NodeData).Where(IsUsableGrid).ToList();
-            bool containsOfferGrid = groupGrids.Any(grid => offer.GridEntityIds.Contains(grid.EntityId));
+            List<MyCubeGrid> groupGrids = group
+                .Nodes.Select(node => node.NodeData)
+                .Where(IsUsableGrid)
+                .ToList();
+            bool containsOfferGrid = groupGrids.Any(grid =>
+                offer.GridEntityIds.Contains(grid.EntityId)
+            );
             if (!containsOfferGrid)
                 continue;
 
@@ -469,7 +629,11 @@ public sealed partial class EssentialsModule
         return pcu;
     }
 
-    private static bool TryParseNonNegativeAmount(string inputAmount, out long amount, out string error)
+    private static bool TryParseNonNegativeAmount(
+        string inputAmount,
+        out long amount,
+        out string error
+    )
     {
         amount = 0;
         string normalized = (inputAmount ?? string.Empty)
@@ -477,7 +641,14 @@ public sealed partial class EssentialsModule
             .Replace(".", string.Empty)
             .Replace(" ", string.Empty);
 
-        if (!long.TryParse(normalized, NumberStyles.Integer, CultureInfo.InvariantCulture, out amount))
+        if (
+            !long.TryParse(
+                normalized,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out amount
+            )
+        )
         {
             error = "Error parsing into number.";
             return false;
@@ -493,14 +664,24 @@ public sealed partial class EssentialsModule
         return true;
     }
 
-    private static bool IsUsableGrid(MyCubeGrid grid)
-        => grid != null && grid.Projector == null && !grid.MarkedForClose && !grid.MarkedAsTrash && grid.InScene;
+    private static bool IsUsableGrid(MyCubeGrid grid) =>
+        grid != null
+        && grid.Projector == null
+        && !grid.MarkedForClose
+        && !grid.MarkedAsTrash
+        && grid.InScene;
 
     private static void SendPrivateChat(long identityId, string message, Color color)
     {
         if (identityId == 0)
             return;
 
-        MyVisualScriptLogicProvider.SendChatMessageColored(message, color, "Essentials", identityId, MyFontEnum.White);
+        MyVisualScriptLogicProvider.SendChatMessageColored(
+            message,
+            color,
+            "Essentials",
+            identityId,
+            MyFontEnum.White
+        );
     }
 }

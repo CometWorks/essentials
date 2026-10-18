@@ -32,7 +32,10 @@ public sealed class StoneCommand : CommandModule
         }
 
         DateTime now = DateTime.UtcNow;
-        if (Cooldowns.TryGetValue(Context.Caller.IdentityId, out DateTime expiresAt) && expiresAt > now)
+        if (
+            Cooldowns.TryGetValue(Context.Caller.IdentityId, out DateTime expiresAt)
+            && expiresAt > now
+        )
         {
             int remainingSeconds = (int)Math.Ceiling((expiresAt - now).TotalSeconds);
             Context.Respond($"Command is still on cooldown for {remainingSeconds} seconds.");
@@ -59,20 +62,22 @@ public sealed class StoneCommand : CommandModule
                 return;
             }
 
-            if (!GridGroupFinder.FindLookAtGridGroup(player.Character).TryPeek(
-                    out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group))
+            if (
+                !GridGroupFinder
+                    .FindLookAtGridGroup(player.Character)
+                    .TryPeek(out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group)
+            )
             {
                 Context.Respond("No grid found in your line of sight.");
                 return;
             }
 
-            grids = group.Nodes
-                .Select(node => node.NodeData)
-                .Where(IsUsableGrid)
-                .ToList();
+            grids = group.Nodes.Select(node => node.NodeData).Where(IsUsableGrid).ToList();
         }
 
-        Cooldowns[Context.Caller.IdentityId] = now.AddSeconds(Plugin.Instance.PluginConfig.StoneCooldownInSeconds);
+        Cooldowns[Context.Caller.IdentityId] = now.AddSeconds(
+            Plugin.Instance.PluginConfig.StoneCooldownInSeconds
+        );
 
         MyFixedPoint deleted = 0;
         int skippedGrids = 0;
@@ -84,9 +89,15 @@ public sealed class StoneCommand : CommandModule
                 continue;
             }
 
-            foreach (MyCubeBlock block in grid.GetFatBlocks().Where(block => block?.HasInventory == true))
+            foreach (
+                MyCubeBlock block in grid.GetFatBlocks().Where(block => block?.HasInventory == true)
+            )
             {
-                for (int inventoryIndex = 0; inventoryIndex < block.InventoryCount; inventoryIndex++)
+                for (
+                    int inventoryIndex = 0;
+                    inventoryIndex < block.InventoryCount;
+                    inventoryIndex++
+                )
                     deleted += DeleteStone(block.GetInventory(inventoryIndex));
             }
         }
@@ -94,8 +105,10 @@ public sealed class StoneCommand : CommandModule
         if (deleted == 0)
             Cooldowns.Remove(Context.Caller.IdentityId);
 
-        Context.Respond($"{deleted} Stone Deleted" +
-                        (skippedGrids > 0 ? $"; skipped {skippedGrids} unowned grid(s)." : "."));
+        Context.Respond(
+            $"{deleted} Stone Deleted"
+                + (skippedGrids > 0 ? $"; skipped {skippedGrids} unowned grid(s)." : ".")
+        );
 
         totalDeleted += deleted;
         if (outputCount)
@@ -109,8 +122,11 @@ public sealed class StoneCommand : CommandModule
         for (int i = items.Count - 1; i >= 0; i--)
         {
             MyPhysicalInventoryItem item = items[i];
-            if (item.Content == null || item.Content.TypeId != typeof(MyObjectBuilder_Ore) ||
-                !string.Equals(item.Content.SubtypeName, "Stone", StringComparison.Ordinal))
+            if (
+                item.Content == null
+                || item.Content.TypeId != typeof(MyObjectBuilder_Ore)
+                || !string.Equals(item.Content.SubtypeName, "Stone", StringComparison.Ordinal)
+            )
                 continue;
 
             deleted += item.Amount;
@@ -120,8 +136,12 @@ public sealed class StoneCommand : CommandModule
         return deleted;
     }
 
-    private static bool IsUsableGrid(MyCubeGrid grid)
-        => grid != null && grid.Projector == null && !grid.MarkedForClose && !grid.MarkedAsTrash && grid.InScene;
+    private static bool IsUsableGrid(MyCubeGrid grid) =>
+        grid != null
+        && grid.Projector == null
+        && !grid.MarkedForClose
+        && !grid.MarkedAsTrash
+        && grid.InScene;
 
     private static bool IsOwnerOrFactionOwned(MyCubeGrid grid, long identityId)
     {

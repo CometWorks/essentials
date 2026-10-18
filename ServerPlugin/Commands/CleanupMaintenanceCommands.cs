@@ -38,7 +38,8 @@ public sealed partial class EssentialsModule
             string helpText,
             bool requiresArgument,
             bool acceptsArgument,
-            Func<string, (bool Ok, string Error, CleanupPredicate Predicate)> build)
+            Func<string, (bool Ok, string Error, CleanupPredicate Predicate)> build
+        )
         {
             Command = command;
             InvertCommand = invertCommand;
@@ -56,46 +57,170 @@ public sealed partial class EssentialsModule
         public Func<string, (bool Ok, string Error, CleanupPredicate Predicate)> Build { get; }
     }
 
-    private static readonly Dictionary<string, DateTime> MaintenanceConfirmations = new Dictionary<string, DateTime>();
-    private static readonly FieldInfo GpssField = typeof(MyGpsCollection).GetField("m_playerGpss", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo SeedParamsField = typeof(MyProceduralWorldGenerator).GetField("m_existingObjectsSeeds", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo CamerasField = typeof(MySession).GetField("Cameras", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo EntityCameraSettingsField = CamerasField?.FieldType.GetField("m_entityCameraSettings", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo FactionRelationsField = typeof(MyFactionCollection).GetField("m_relationsBetweenFactions", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo PlayerFactionRelationsField = typeof(MyFactionCollection).GetField("m_relationsBetweenPlayersAndFactions", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static readonly Dictionary<string, DateTime> MaintenanceConfirmations =
+        new Dictionary<string, DateTime>();
+    private static readonly FieldInfo GpssField = typeof(MyGpsCollection).GetField(
+        "m_playerGpss",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    );
+    private static readonly FieldInfo SeedParamsField = typeof(MyProceduralWorldGenerator).GetField(
+        "m_existingObjectsSeeds",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    );
+    private static readonly FieldInfo CamerasField = typeof(MySession).GetField(
+        "Cameras",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    );
+    private static readonly FieldInfo EntityCameraSettingsField = CamerasField?.FieldType.GetField(
+        "m_entityCameraSettings",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    );
+    private static readonly FieldInfo FactionRelationsField = typeof(MyFactionCollection).GetField(
+        "m_relationsBetweenFactions",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    );
+    private static readonly FieldInfo PlayerFactionRelationsField =
+        typeof(MyFactionCollection).GetField(
+            "m_relationsBetweenPlayersAndFactions",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        );
 
-    private static readonly IReadOnlyList<CleanupCondition> CleanupConditions = new List<CleanupCondition>
-    {
-        Arg("name", null, "Finds grids with a matching name. Accepts regex format.", pattern =>
+    private static readonly IReadOnlyList<CleanupCondition> CleanupConditions =
+        new List<CleanupCondition>
         {
-            try
-            {
-                Regex regex = new Regex(pattern, RegexOptions.None, TimeSpan.FromMilliseconds(25));
-                return Ok(grid => !string.IsNullOrEmpty(grid.DisplayName) && MatchesGridName(regex, grid.DisplayName));
-            }
-            catch (ArgumentException ex)
-            {
-                return Error("Invalid regex: " + ex.Message);
-            }
-        }),
-        Arg("blockslessthan", null, "Finds grids with less than the given number of blocks.", value => ParseInt(value, count => grid => grid.BlocksCount < count)),
-        Arg("blocksgreaterthan", null, "Finds grids with more than the given number of blocks.", value => ParseInt(value, count => grid => grid.BlocksCount > count)),
-        Arg("pcugreaterthan", null, "Finds grids with more than the given number of PCU.", value => ParseInt(value, pcu => grid => grid.BlocksPCU > pcu)),
-        Arg("pculessthan", null, "Finds grids with less than the given number of PCU.", value => ParseInt(value, pcu => grid => grid.BlocksPCU < pcu)),
-        Arg("hasgridtype", null, "Finds grids with the specified grid type (large | small | ship | static).", value => Ok(grid => HasGridType(grid, value))),
-        Arg("hasownertype", null, "Finds grids with the specified owner type (npc | player | nobody).", value => Ok(grid => HasOwnerType(grid, value))),
-        NoArg("haspower", "nopower", "Finds grids with, or without power.", grid => HasPower(grid)),
-        NoArg("insideplanet", null, "Finds grids that are trapped inside planets.", InsidePlanet),
-        Arg("playerdistancelessthan", "playerdistancegreaterthan", "Finds grids that are nearer/farther than the given distance from players.", value => ParseDouble(value, distance => grid => PlayerDistanceLessThan(grid, distance))),
-        Arg("poweredgriddistancegreaterthan", null, "Finds grids that are farther than the given distance from other powered grids.", value => ParseDouble(value, distance => grid => PoweredGridDistanceGreaterThan(grid, distance))),
-        Arg("centerdistancelessthan", "centerdistancegreaterthan", "Finds grids that are nearer/farther than the given distance from world center.", value => ParseDouble(value, distance => grid => CenterDistanceLessThan(grid, distance))),
-        Arg("ownedby", null, "Finds grids owned by the given player. Accepts player name, identity id, Steam id, nobody, npc, or pirates.", value => Ok(grid => OwnedBy(grid, value))),
-        Arg("hastype", "notype", "Finds grids containing blocks of the given type.", value => Ok(grid => HasBlockType(grid, value))),
-        Arg("hastype-fast", "notype-fast", "Finds grids containing blocks of any comma-separated object-builder type.", value => Ok(grid => HasBlockTypeFast(grid, value))),
-        Arg("hassubtype", "nosubtype", "Finds grids containing blocks of the given subtype.", value => Ok(grid => HasBlockSubtype(grid, value))),
-        Arg("hassubtype-fast", "nosubtype-fast", "Finds grids containing blocks of any comma-separated subtype.", value => Ok(grid => HasBlockSubtypeFast(grid, value))),
-        NoArg("haspilot", null, "Finds grids with pilots. Without this condition cleanup commands skip piloted grids by default.", HasPilot)
-    };
+            Arg(
+                "name",
+                null,
+                "Finds grids with a matching name. Accepts regex format.",
+                pattern =>
+                {
+                    try
+                    {
+                        Regex regex = new Regex(
+                            pattern,
+                            RegexOptions.None,
+                            TimeSpan.FromMilliseconds(25)
+                        );
+                        return Ok(grid =>
+                            !string.IsNullOrEmpty(grid.DisplayName)
+                            && MatchesGridName(regex, grid.DisplayName)
+                        );
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        return Error("Invalid regex: " + ex.Message);
+                    }
+                }
+            ),
+            Arg(
+                "blockslessthan",
+                null,
+                "Finds grids with less than the given number of blocks.",
+                value => ParseInt(value, count => grid => grid.BlocksCount < count)
+            ),
+            Arg(
+                "blocksgreaterthan",
+                null,
+                "Finds grids with more than the given number of blocks.",
+                value => ParseInt(value, count => grid => grid.BlocksCount > count)
+            ),
+            Arg(
+                "pcugreaterthan",
+                null,
+                "Finds grids with more than the given number of PCU.",
+                value => ParseInt(value, pcu => grid => grid.BlocksPCU > pcu)
+            ),
+            Arg(
+                "pculessthan",
+                null,
+                "Finds grids with less than the given number of PCU.",
+                value => ParseInt(value, pcu => grid => grid.BlocksPCU < pcu)
+            ),
+            Arg(
+                "hasgridtype",
+                null,
+                "Finds grids with the specified grid type (large | small | ship | static).",
+                value => Ok(grid => HasGridType(grid, value))
+            ),
+            Arg(
+                "hasownertype",
+                null,
+                "Finds grids with the specified owner type (npc | player | nobody).",
+                value => Ok(grid => HasOwnerType(grid, value))
+            ),
+            NoArg(
+                "haspower",
+                "nopower",
+                "Finds grids with, or without power.",
+                grid => HasPower(grid)
+            ),
+            NoArg(
+                "insideplanet",
+                null,
+                "Finds grids that are trapped inside planets.",
+                InsidePlanet
+            ),
+            Arg(
+                "playerdistancelessthan",
+                "playerdistancegreaterthan",
+                "Finds grids that are nearer/farther than the given distance from players.",
+                value =>
+                    ParseDouble(value, distance => grid => PlayerDistanceLessThan(grid, distance))
+            ),
+            Arg(
+                "poweredgriddistancegreaterthan",
+                null,
+                "Finds grids that are farther than the given distance from other powered grids.",
+                value =>
+                    ParseDouble(
+                        value,
+                        distance => grid => PoweredGridDistanceGreaterThan(grid, distance)
+                    )
+            ),
+            Arg(
+                "centerdistancelessthan",
+                "centerdistancegreaterthan",
+                "Finds grids that are nearer/farther than the given distance from world center.",
+                value =>
+                    ParseDouble(value, distance => grid => CenterDistanceLessThan(grid, distance))
+            ),
+            Arg(
+                "ownedby",
+                null,
+                "Finds grids owned by the given player. Accepts player name, identity id, Steam id, nobody, npc, or pirates.",
+                value => Ok(grid => OwnedBy(grid, value))
+            ),
+            Arg(
+                "hastype",
+                "notype",
+                "Finds grids containing blocks of the given type.",
+                value => Ok(grid => HasBlockType(grid, value))
+            ),
+            Arg(
+                "hastype-fast",
+                "notype-fast",
+                "Finds grids containing blocks of any comma-separated object-builder type.",
+                value => Ok(grid => HasBlockTypeFast(grid, value))
+            ),
+            Arg(
+                "hassubtype",
+                "nosubtype",
+                "Finds grids containing blocks of the given subtype.",
+                value => Ok(grid => HasBlockSubtype(grid, value))
+            ),
+            Arg(
+                "hassubtype-fast",
+                "nosubtype-fast",
+                "Finds grids containing blocks of any comma-separated subtype.",
+                value => Ok(grid => HasBlockSubtypeFast(grid, value))
+            ),
+            NoArg(
+                "haspilot",
+                null,
+                "Finds grids with pilots. Without this condition cleanup commands skip piloted grids by default.",
+                HasPilot
+            ),
+        };
 
     [Command("cleanup scan", "Find grids matching cleanup conditions.")]
     [Permission(MyPromoteLevel.Admin)]
@@ -117,7 +242,9 @@ public sealed partial class EssentialsModule
         StringBuilder sb = new StringBuilder();
         sb.AppendLine($"Found {grids.Count} grids matching the given conditions.");
         foreach (MyCubeGrid grid in grids.OrderBy(grid => grid.DisplayName))
-            sb.AppendLine($"{grid.DisplayName} ({grid.BlocksCount:#,##0} block(s), {grid.BlocksPCU:#,##0} PCU, entity {grid.EntityId})");
+            sb.AppendLine(
+                $"{grid.DisplayName} ({grid.BlocksCount:#,##0} block(s), {grid.BlocksPCU:#,##0} PCU, entity {grid.EntityId})"
+            );
 
         return sb.ToString();
     }
@@ -139,7 +266,12 @@ public sealed partial class EssentialsModule
         }
 
         string operation = "cleanup delete:" + string.Join(" ", args);
-        if (!ConfirmMaintenance(operation, $"This will delete {grids.Count:#,##0} grid(s). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will delete {grids.Count:#,##0} grid(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int count = 0;
@@ -148,28 +280,44 @@ public sealed partial class EssentialsModule
             if (grid.MarkedForClose)
                 continue;
 
-            Plugin.Instance?.Log.Info("Cleanup deleting grid {0}: {1}", grid.EntityId, grid.DisplayName);
+            Plugin.Instance?.Log.Info(
+                "Cleanup deleting grid {0}: {1}",
+                grid.EntityId,
+                grid.DisplayName
+            );
             EjectPilots(grid);
             grid.Close();
             count++;
         }
 
         Context.Respond($"Deleted {count:#,##0} grids matching the given conditions.");
-        Plugin.Instance?.Log.Info("Cleanup deleted {0} grids matching conditions: {1}", count, string.Join(" ", args));
+        Plugin.Instance?.Log.Info(
+            "Cleanup deleted {0} grids matching conditions: {1}",
+            count,
+            string.Join(" ", args)
+        );
     }
 
     [Command("cleanup delete floatingobjects", "Delete floating objects.")]
     [Permission(MyPromoteLevel.Admin)]
     public void CleanupDeleteFloatingObjects()
     {
-        List<MyFloatingObject> objects = MyEntities.GetEntities().OfType<MyFloatingObject>().ToList();
+        List<MyFloatingObject> objects = MyEntities
+            .GetEntities()
+            .OfType<MyFloatingObject>()
+            .ToList();
         if (objects.Count == 0)
         {
             Context.Respond("Deleted 0 floating objects.");
             return;
         }
 
-        if (!ConfirmMaintenance("cleanup delete floatingobjects", $"This will delete {objects.Count:#,##0} floating object(s). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                "cleanup delete floatingobjects",
+                $"This will delete {objects.Count:#,##0} floating object(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int count = 0;
@@ -178,7 +326,11 @@ public sealed partial class EssentialsModule
             if (floater.MarkedForClose)
                 continue;
 
-            Plugin.Instance?.Log.Info("Cleanup deleting floating object {0}: {1}", floater.EntityId, floater.DisplayName);
+            Plugin.Instance?.Log.Info(
+                "Cleanup deleting floating object {0}: {1}",
+                floater.EntityId,
+                floater.DisplayName
+            );
             floater.Close();
             count++;
         }
@@ -195,14 +347,19 @@ public sealed partial class EssentialsModule
         sb.AppendLine("Cleanup conditions:");
         foreach (CleanupCondition condition in CleanupConditions)
         {
-            string aliases = string.IsNullOrEmpty(condition.InvertCommand) ? condition.Command : condition.Command + " / " + condition.InvertCommand;
+            string aliases = string.IsNullOrEmpty(condition.InvertCommand)
+                ? condition.Command
+                : condition.Command + " / " + condition.InvertCommand;
             sb.AppendLine($"{aliases}: {condition.HelpText}");
         }
         sb.AppendLine("No haspilot condition means piloted grids are skipped by default.");
         return sb.ToString();
     }
 
-    [Command("identity clean", "Remove identities that have not logged on in the given number of days.")]
+    [Command(
+        "identity clean",
+        "Remove identities that have not logged on in the given number of days."
+    )]
     [Permission(MyPromoteLevel.SpaceMaster)]
     public void IdentityClean(int days, bool includeNpcs = false)
     {
@@ -214,13 +371,23 @@ public sealed partial class EssentialsModule
         }
 
         string operation = $"identity clean:{days}:{includeNpcs}";
-        if (!ConfirmMaintenance(operation, $"This will remove {identities.Count:#,##0} old identit(y/ies) and preserve their grids. Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will remove {identities.Count:#,##0} old identit(y/ies) and preserve their grids. Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
-        int fixedGrids = FixGridOwnership(identities.Select(identity => identity.IdentityId).ToList(), deleteGrids: false);
+        int fixedGrids = FixGridOwnership(
+            identities.Select(identity => identity.IdentityId).ToList(),
+            deleteGrids: false
+        );
         RemoveFromFactionAndDeleteIdentities(identities);
         int factions = CleanFactionsInternal(1);
-        Context.Respond($"Removed {identities.Count:#,##0} old identit(y/ies), reassigned ownership on {fixedGrids:#,##0} grid(s), removed {factions:#,##0} empty faction(s).");
+        Context.Respond(
+            $"Removed {identities.Count:#,##0} old identit(y/ies), reassigned ownership on {fixedGrids:#,##0} grid(s), removed {factions:#,##0} empty faction(s)."
+        );
     }
 
     [Command("identity purge", "Remove old identities and grids solely owned by them.")]
@@ -236,13 +403,23 @@ public sealed partial class EssentialsModule
 
         int affectedGrids = CountOwnedGrids(identities.Select(identity => identity.IdentityId));
         string operation = $"identity purge:{days}:{includeNpcs}";
-        if (!ConfirmMaintenance(operation, $"This will remove {identities.Count:#,##0} old identit(y/ies) and close up to {affectedGrids:#,##0} solely-owned grid(s). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will remove {identities.Count:#,##0} old identit(y/ies) and close up to {affectedGrids:#,##0} solely-owned grid(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
-        int deletedGrids = FixGridOwnership(identities.Select(identity => identity.IdentityId).ToList(), deleteGrids: true);
+        int deletedGrids = FixGridOwnership(
+            identities.Select(identity => identity.IdentityId).ToList(),
+            deleteGrids: true
+        );
         RemoveFromFactionAndDeleteIdentities(identities);
         int factions = CleanFactionsInternal(1);
-        Context.Respond($"Removed {identities.Count:#,##0} old identit(y/ies), closed {deletedGrids:#,##0} grid(s), removed {factions:#,##0} empty faction(s).");
+        Context.Respond(
+            $"Removed {identities.Count:#,##0} old identit(y/ies), closed {deletedGrids:#,##0} grid(s), removed {factions:#,##0} empty faction(s)."
+        );
     }
 
     [Command("identity clear", "Remove one identity and grids solely owned by it.")]
@@ -258,13 +435,23 @@ public sealed partial class EssentialsModule
 
         int affectedGrids = CountOwnedGrids(new[] { identity.IdentityId });
         string operation = $"identity clear:{identity.IdentityId}";
-        if (!ConfirmMaintenance(operation, $"This will remove identity '{identity.DisplayName}' and close up to {affectedGrids:#,##0} solely-owned grid(s). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will remove identity '{identity.DisplayName}' and close up to {affectedGrids:#,##0} solely-owned grid(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
-        int deletedGrids = FixGridOwnership(new List<long> { identity.IdentityId }, deleteGrids: true);
+        int deletedGrids = FixGridOwnership(
+            new List<long> { identity.IdentityId },
+            deleteGrids: true
+        );
         RemoveFromFactionAndDeleteIdentities(new List<MyIdentity> { identity });
         int factions = CleanFactionsInternal(1);
-        Context.Respond($"Removed identity '{identity.DisplayName}', closed {deletedGrids:#,##0} grid(s), removed {factions:#,##0} empty faction(s).");
+        Context.Respond(
+            $"Removed identity '{identity.DisplayName}', closed {deletedGrids:#,##0} grid(s), removed {factions:#,##0} empty faction(s)."
+        );
     }
 
     [Command("rep wipe", "Reset reputation relations on the server.")]
@@ -279,7 +466,12 @@ public sealed partial class EssentialsModule
         }
 
         string operation = $"rep wipe:{removePlayerToFaction}:{removeFactionToFaction}";
-        if (!ConfirmMaintenance(operation, $"This will wipe {count:#,##0} reputation relation(s). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will wipe {count:#,##0} reputation relation(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int wiped = WipeReputations(removePlayerToFaction, removeFactionToFaction);
@@ -299,7 +491,12 @@ public sealed partial class EssentialsModule
         }
 
         string operation = $"faction clean:{memberCount}";
-        if (!ConfirmMaintenance(operation, $"This will remove {factions.Count:#,##0} faction(s) with fewer than {memberCount} valid member(s). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will remove {factions.Count:#,##0} faction(s) with fewer than {memberCount} valid member(s). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int count = 0;
@@ -309,7 +506,9 @@ public sealed partial class EssentialsModule
             count++;
         }
 
-        Context.Respond($"Removed {count:#,##0} faction(s) with fewer than {memberCount} valid member(s).");
+        Context.Respond(
+            $"Removed {count:#,##0} faction(s) with fewer than {memberCount} valid member(s)."
+        );
     }
 
     [Command("faction remove", "Remove a faction by tag.")]
@@ -324,11 +523,20 @@ public sealed partial class EssentialsModule
         }
 
         string operation = $"faction remove:{faction.FactionId}";
-        if (!ConfirmMaintenance(operation, $"This will remove faction {faction.Tag} ({faction.Name}). Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                operation,
+                $"This will remove faction {faction.Tag} ({faction.Name}). Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         RemoveFaction(faction);
-        Context.Respond(MySession.Static.Factions.FactionTagExists(tag) ? $"{tag} removal failed." : $"{tag} removed.");
+        Context.Respond(
+            MySession.Static.Factions.FactionTagExists(tag)
+                ? $"{tag} removal failed."
+                : $"{tag} removed."
+        );
     }
 
     [Command("faction info", "List factions and members.")]
@@ -337,17 +545,26 @@ public sealed partial class EssentialsModule
     {
         IEnumerable<MyFaction> factions = MySession.Static.Factions.Select(pair => pair.Value);
         if (!string.IsNullOrWhiteSpace(tag))
-            factions = factions.Where(faction => string.Equals(faction.Tag, tag, StringComparison.InvariantCultureIgnoreCase));
+            factions = factions.Where(faction =>
+                string.Equals(faction.Tag, tag, StringComparison.InvariantCultureIgnoreCase)
+            );
 
         StringBuilder sb = new StringBuilder();
         foreach (MyFaction faction in factions.OrderBy(faction => faction.Tag))
         {
-            sb.AppendLine($"{faction.Tag} - {faction.Name} - {faction.Members.Count} member(s){(faction.IsEveryoneNpc() ? " - NPC" : "")}");
+            sb.AppendLine(
+                $"{faction.Tag} - {faction.Name} - {faction.Members.Count} member(s){(faction.IsEveryoneNpc() ? " - NPC" : "")}"
+            );
             foreach (KeyValuePair<long, MyFactionMember> member in faction.Members)
             {
                 MyIdentity identity = MySession.Static.Players.TryGetIdentity(member.Key);
-                string name = string.IsNullOrWhiteSpace(identity?.DisplayName) ? member.Key.ToString() : identity.DisplayName;
-                string role = member.Value.IsFounder ? "Founder" : member.Value.IsLeader ? "Leader" : "Member";
+                string name = string.IsNullOrWhiteSpace(identity?.DisplayName)
+                    ? member.Key.ToString()
+                    : identity.DisplayName;
+                string role =
+                    member.Value.IsFounder ? "Founder"
+                    : member.Value.IsLeader ? "Leader"
+                    : "Member";
                 sb.AppendLine($"  {name} ({member.Key}) - {role}");
             }
         }
@@ -355,19 +572,35 @@ public sealed partial class EssentialsModule
         return sb.Length == 0 ? "No matching factions found." : sb.ToString();
     }
 
-    [Command("sandbox clean", "Clean stale identities, factions, GPS/camera/procedural data, and block ownership.")]
+    [Command(
+        "sandbox clean",
+        "Clean stale identities, factions, GPS/camera/procedural data, and block ownership."
+    )]
     [Permission(MyPromoteLevel.SpaceMaster)]
     public void SandboxClean()
     {
-        if (!ConfirmMaintenance("sandbox clean", "This will remove stale sandbox data and cannot be previewed exactly. Run the same command again within 30 seconds to confirm."))
+        if (
+            !ConfirmMaintenance(
+                "sandbox clean",
+                "This will remove stale sandbox data and cannot be previewed exactly. Run the same command again within 30 seconds to confirm."
+            )
+        )
             return;
 
         int count = 0;
         HashSet<long> validIdentities = BuildValidIdentitySet();
 
-        foreach (MyIdentity identity in MySession.Static.Players.GetAllIdentities().OfType<MyIdentity>().ToList())
+        foreach (
+            MyIdentity identity in MySession
+                .Static.Players.GetAllIdentities()
+                .OfType<MyIdentity>()
+                .ToList()
+        )
         {
-            if (MySession.Static.Players.IdentityIsNpc(identity.IdentityId) || string.IsNullOrEmpty(identity.DisplayName))
+            if (
+                MySession.Static.Players.IdentityIsNpc(identity.IdentityId)
+                || string.IsNullOrEmpty(identity.DisplayName)
+            )
             {
                 validIdentities.Add(identity.IdentityId);
                 continue;
@@ -396,17 +629,38 @@ public sealed partial class EssentialsModule
         string command,
         string invertCommand,
         string helpText,
-        Func<string, (bool Ok, string Error, CleanupPredicate Predicate)> build)
-        => new CleanupCondition(command, invertCommand, helpText, requiresArgument: true, acceptsArgument: true, build);
+        Func<string, (bool Ok, string Error, CleanupPredicate Predicate)> build
+    ) =>
+        new CleanupCondition(
+            command,
+            invertCommand,
+            helpText,
+            requiresArgument: true,
+            acceptsArgument: true,
+            build
+        );
 
-    private static CleanupCondition NoArg(string command, string invertCommand, string helpText, CleanupPredicate predicate)
-        => new CleanupCondition(command, invertCommand, helpText, requiresArgument: false, acceptsArgument: false, _ => Ok(predicate));
+    private static CleanupCondition NoArg(
+        string command,
+        string invertCommand,
+        string helpText,
+        CleanupPredicate predicate
+    ) =>
+        new CleanupCondition(
+            command,
+            invertCommand,
+            helpText,
+            requiresArgument: false,
+            acceptsArgument: false,
+            _ => Ok(predicate)
+        );
 
-    private static (bool Ok, string Error, CleanupPredicate Predicate) Ok(CleanupPredicate predicate)
-        => (true, null, predicate);
+    private static (bool Ok, string Error, CleanupPredicate Predicate) Ok(
+        CleanupPredicate predicate
+    ) => (true, null, predicate);
 
-    private static (bool Ok, string Error, CleanupPredicate Predicate) Error(string error)
-        => (false, error, null);
+    private static (bool Ok, string Error, CleanupPredicate Predicate) Error(string error) =>
+        (false, error, null);
 
     private static bool MatchesGridName(Regex regex, string name)
     {
@@ -420,62 +674,93 @@ public sealed partial class EssentialsModule
         }
     }
 
-    private static (bool Ok, string Error, CleanupPredicate Predicate) ParseInt(string value, Func<int, CleanupPredicate> predicate)
+    private static (bool Ok, string Error, CleanupPredicate Predicate) ParseInt(
+        string value,
+        Func<int, CleanupPredicate> predicate
+    )
     {
-        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+        return int.TryParse(
+            value,
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out int parsed
+        )
             ? Ok(predicate(parsed))
             : Error($"Could not parse integer argument '{value}'.");
     }
 
-    private static (bool Ok, string Error, CleanupPredicate Predicate) ParseDouble(string value, Func<double, CleanupPredicate> predicate)
+    private static (bool Ok, string Error, CleanupPredicate Predicate) ParseDouble(
+        string value,
+        Func<double, CleanupPredicate> predicate
+    )
     {
-        return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+        return double.TryParse(
+            value,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out double parsed
+        )
             ? Ok(predicate(parsed))
             : Error($"Could not parse number argument '{value}'.");
     }
 
-    private bool TryScanCleanupGrids(IReadOnlyList<string> args, out List<MyCubeGrid> grids, out string error)
+    private bool TryScanCleanupGrids(
+        IReadOnlyList<string> args,
+        out List<MyCubeGrid> grids,
+        out string error
+    )
     {
         grids = new List<MyCubeGrid>();
         if (!TryBuildCleanupPredicates(args, out List<CleanupPredicate> predicates, out error))
             return false;
 
-        foreach (MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group in MyCubeGridGroups.Static.Logical.Groups)
+        foreach (
+            MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group in MyCubeGridGroups
+                .Static
+                .Logical
+                .Groups
+        )
         {
             if (MatchesCleanupGroup(group, predicates, out List<MyCubeGrid> groupGrids))
                 grids.AddRange(groupGrids);
         }
 
-        grids = grids
-            .GroupBy(grid => grid.EntityId)
-            .Select(group => group.First())
-            .ToList();
+        grids = grids.GroupBy(grid => grid.EntityId).Select(group => group.First()).ToList();
         return true;
     }
 
     internal static bool MatchesCleanupRule(MyCubeGrid grid, string conditions, out string error)
     {
-        string[] args = Regex.Matches(conditions, "\"[^\"]*\"|\\S+")
+        string[] args = Regex
+            .Matches(conditions, "\"[^\"]*\"|\\S+")
             .Cast<Match>()
             .Select(match => match.Value.Trim('"'))
             .ToArray();
         if (!TryBuildCleanupPredicates(args, out List<CleanupPredicate> predicates, out error))
             return false;
 
-        MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group = MyCubeGridGroups.Static.Logical.GetGroup(grid);
-        return IsCleanupCandidate(grid) && group != null && MatchesCleanupGroup(group, predicates, out _);
+        MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group =
+            MyCubeGridGroups.Static.Logical.GetGroup(grid);
+        return IsCleanupCandidate(grid)
+            && group != null
+            && MatchesCleanupGroup(group, predicates, out _);
     }
 
     private static bool MatchesCleanupGroup(
         MyGroups<MyCubeGrid, MyGridLogicalGroupData>.Group group,
         IReadOnlyList<CleanupPredicate> predicates,
-        out List<MyCubeGrid> grids)
+        out List<MyCubeGrid> grids
+    )
     {
         grids = group.Nodes.Select(node => node.NodeData).Where(IsCleanupCandidate).ToList();
         return grids.Count > 0 && grids.All(grid => predicates.All(predicate => predicate(grid)));
     }
 
-    private static bool TryBuildCleanupPredicates(IReadOnlyList<string> args, out List<CleanupPredicate> predicates, out string error)
+    private static bool TryBuildCleanupPredicates(
+        IReadOnlyList<string> args,
+        out List<CleanupPredicate> predicates,
+        out string error
+    )
     {
         predicates = new List<CleanupPredicate>();
         error = null;
@@ -491,7 +776,13 @@ public sealed partial class EssentialsModule
                 return false;
             }
 
-            if (string.Equals(condition.Command, "haspilot", StringComparison.InvariantCultureIgnoreCase))
+            if (
+                string.Equals(
+                    condition.Command,
+                    "haspilot",
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
                 explicitPilotCondition = true;
 
             string value = null;
@@ -531,14 +822,22 @@ public sealed partial class EssentialsModule
     {
         foreach (CleanupCondition condition in CleanupConditions)
         {
-            if (string.Equals(token, condition.Command, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                string.Equals(token, condition.Command, StringComparison.InvariantCultureIgnoreCase)
+            )
             {
                 invert = false;
                 return condition;
             }
 
-            if (!string.IsNullOrEmpty(condition.InvertCommand) &&
-                string.Equals(token, condition.InvertCommand, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                !string.IsNullOrEmpty(condition.InvertCommand)
+                && string.Equals(
+                    token,
+                    condition.InvertCommand,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
             {
                 invert = true;
                 return condition;
@@ -549,11 +848,15 @@ public sealed partial class EssentialsModule
         return null;
     }
 
-    private static bool IsCleanupConditionToken(string token)
-        => FindCleanupCondition(token, out _) != null;
+    private static bool IsCleanupConditionToken(string token) =>
+        FindCleanupCondition(token, out _) != null;
 
-    private static bool IsCleanupCandidate(MyCubeGrid grid)
-        => grid != null && grid.Projector == null && !grid.MarkedForClose && !grid.MarkedAsTrash && grid.InScene;
+    private static bool IsCleanupCandidate(MyCubeGrid grid) =>
+        grid != null
+        && grid.Projector == null
+        && !grid.MarkedForClose
+        && !grid.MarkedAsTrash
+        && grid.InScene;
 
     private bool ConfirmMaintenance(string operation, string prompt)
     {
@@ -610,12 +913,16 @@ public sealed partial class EssentialsModule
         if (string.Equals(ownerType, "nobody", StringComparison.InvariantCultureIgnoreCase))
             return owner == 0;
 
-        if (string.Equals(ownerType, "npc", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(ownerType, "npcs", StringComparison.InvariantCultureIgnoreCase))
+        if (
+            string.Equals(ownerType, "npc", StringComparison.InvariantCultureIgnoreCase)
+            || string.Equals(ownerType, "npcs", StringComparison.InvariantCultureIgnoreCase)
+        )
             return owner != 0 && MySession.Static.Players.IdentityIsNpc(owner);
 
-        if (string.Equals(ownerType, "player", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(ownerType, "players", StringComparison.InvariantCultureIgnoreCase))
+        if (
+            string.Equals(ownerType, "player", StringComparison.InvariantCultureIgnoreCase)
+            || string.Equals(ownerType, "players", StringComparison.InvariantCultureIgnoreCase)
+        )
             return owner != 0 && !MySession.Static.Players.IdentityIsNpc(owner);
 
         return false;
@@ -634,11 +941,16 @@ public sealed partial class EssentialsModule
         foreach (MyCubeBlock block in grid.GetFatBlocks())
         {
             MyResourceSourceComponent source = block.Components?.Get<MyResourceSourceComponent>();
-            if (source == null || !source.ResourceTypes.Contains(MyResourceDistributorComponent.ElectricityId))
+            if (
+                source == null
+                || !source.ResourceTypes.Contains(MyResourceDistributorComponent.ElectricityId)
+            )
                 continue;
 
-            if (source.HasCapacityRemainingByType(MyResourceDistributorComponent.ElectricityId) &&
-                source.ProductionEnabledByType(MyResourceDistributorComponent.ElectricityId))
+            if (
+                source.HasCapacityRemainingByType(MyResourceDistributorComponent.ElectricityId)
+                && source.ProductionEnabledByType(MyResourceDistributorComponent.ElectricityId)
+            )
                 return true;
         }
 
@@ -653,7 +965,10 @@ public sealed partial class EssentialsModule
 
         foreach (MyPlanet planet in voxels.OfType<MyPlanet>())
         {
-            double distanceSquared = Vector3D.DistanceSquared(sphere.Center, planet.PositionComp.WorldVolume.Center);
+            double distanceSquared = Vector3D.DistanceSquared(
+                sphere.Center,
+                planet.PositionComp.WorldVolume.Center
+            );
             if (distanceSquared <= planet.MaximumRadius * planet.MaximumRadius / 2)
                 return true;
         }
@@ -666,7 +981,10 @@ public sealed partial class EssentialsModule
         double distanceSquared = distance * distance;
         foreach (MyPlayer player in MySession.Static.Players.GetOnlinePlayers())
         {
-            if (Vector3D.DistanceSquared(player.GetPosition(), grid.PositionComp.GetPosition()) < distanceSquared)
+            if (
+                Vector3D.DistanceSquared(player.GetPosition(), grid.PositionComp.GetPosition())
+                < distanceSquared
+            )
                 return true;
         }
 
@@ -683,7 +1001,10 @@ public sealed partial class EssentialsModule
             if (other.EntityId == grid.EntityId || other.Projector != null || !HasPower(other))
                 continue;
 
-            if (Vector3D.DistanceSquared(other.PositionComp.GetPosition(), gridPosition) < distanceSquared)
+            if (
+                Vector3D.DistanceSquared(other.PositionComp.GetPosition(), gridPosition)
+                < distanceSquared
+            )
                 return false;
         }
 
@@ -693,7 +1014,8 @@ public sealed partial class EssentialsModule
     private static bool CenterDistanceLessThan(MyCubeGrid grid, double distance)
     {
         double distanceSquared = distance * distance;
-        return Vector3D.DistanceSquared(Vector3D.Zero, grid.PositionComp.GetPosition()) < distanceSquared;
+        return Vector3D.DistanceSquared(Vector3D.Zero, grid.PositionComp.GetPosition())
+            < distanceSquared;
     }
 
     private static bool OwnedBy(MyCubeGrid grid, string value)
@@ -701,26 +1023,33 @@ public sealed partial class EssentialsModule
         if (string.Equals(value, "nobody", StringComparison.InvariantCultureIgnoreCase))
             return grid.BigOwners.Count == 0;
 
-        if (string.Equals(value, "npc", StringComparison.InvariantCultureIgnoreCase) ||
-            string.Equals(value, "npcs", StringComparison.InvariantCultureIgnoreCase))
-            return grid.BigOwners.Count > 0 && MySession.Static.Factions.IsNpcFaction(grid.BigOwners.FirstOrDefault());
+        if (
+            string.Equals(value, "npc", StringComparison.InvariantCultureIgnoreCase)
+            || string.Equals(value, "npcs", StringComparison.InvariantCultureIgnoreCase)
+        )
+            return grid.BigOwners.Count > 0
+                && MySession.Static.Factions.IsNpcFaction(grid.BigOwners.FirstOrDefault());
 
         long identityId;
         if (string.Equals(value, "pirates", StringComparison.InvariantCultureIgnoreCase))
         {
             identityId = MyPirateAntennas.GetPiratesId();
             IMyFaction pirateFaction = MySession.Static.Factions.GetPlayerFaction(identityId);
-            return pirateFaction != null &&
-                   grid.BigOwners.Count > 0 &&
-                   pirateFaction.Members.ContainsKey(grid.BigOwners.FirstOrDefault());
+            return pirateFaction != null
+                && grid.BigOwners.Count > 0
+                && pirateFaction.Members.ContainsKey(grid.BigOwners.FirstOrDefault());
         }
 
         IMyIdentity identity = Utilities.GetIdentityByNameOrIds(value);
         if (identity != null)
             return grid.BigOwners.Contains(identity.IdentityId);
 
-        return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out identityId) &&
-               grid.BigOwners.Contains(identityId);
+        return long.TryParse(
+                value,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out identityId
+            ) && grid.BigOwners.Contains(identityId);
     }
 
     private static bool HasBlockType(MyCubeGrid grid, string typeName)
@@ -739,7 +1068,13 @@ public sealed partial class EssentialsModule
     {
         foreach (MyCubeBlock block in grid.GetFatBlocks())
         {
-            if (string.Equals(block.BlockDefinition.Id.SubtypeName, subtypeName, StringComparison.InvariantCultureIgnoreCase))
+            if (
+                string.Equals(
+                    block.BlockDefinition.Id.SubtypeName,
+                    subtypeName,
+                    StringComparison.InvariantCultureIgnoreCase
+                )
+            )
                 return true;
         }
 
@@ -752,12 +1087,15 @@ public sealed partial class EssentialsModule
         foreach (string raw in typeName.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
         {
             string value = raw.Trim();
-            if (MyObjectBuilderType.TryParse(value, out MyObjectBuilderType typeId) ||
-                MyObjectBuilderType.TryParse("MyObjectBuilder_" + value, out typeId))
+            if (
+                MyObjectBuilderType.TryParse(value, out MyObjectBuilderType typeId)
+                || MyObjectBuilderType.TryParse("MyObjectBuilder_" + value, out typeId)
+            )
                 types.Add(typeId);
         }
 
-        return types.Count > 0 && grid.GetFatBlocks().Any(block => types.Contains(block.BlockDefinition.Id.TypeId));
+        return types.Count > 0
+            && grid.GetFatBlocks().Any(block => types.Contains(block.BlockDefinition.Id.TypeId));
     }
 
     private static bool HasBlockSubtypeFast(MyCubeGrid grid, string subtypeName)
@@ -767,19 +1105,24 @@ public sealed partial class EssentialsModule
             .Select(value => MyStringHash.TryGet(value.Trim()))
             .ToList();
 
-        return subtypes.Count > 0 && grid.GetFatBlocks().Any(block => subtypes.Contains(block.BlockDefinition.Id.SubtypeId));
+        return subtypes.Count > 0
+            && grid.GetFatBlocks()
+                .Any(block => subtypes.Contains(block.BlockDefinition.Id.SubtypeId));
     }
 
-    private static bool HasPilot(MyCubeGrid grid)
-        => grid.GetFatBlocks().OfType<MyShipController>().Any(block => block.Pilot != null);
+    private static bool HasPilot(MyCubeGrid grid) =>
+        grid.GetFatBlocks().OfType<MyShipController>().Any(block => block.Pilot != null);
 
     private static List<MyIdentity> FindOldIdentities(int days, bool includeNpcs)
     {
         DateTime cutoff = DateTime.Now - TimeSpan.FromDays(days);
-        return MySession.Static.Players.GetAllIdentities()
+        return MySession
+            .Static.Players.GetAllIdentities()
             .OfType<MyIdentity>()
             .Where(identity => identity.LastLoginTime < cutoff)
-            .Where(identity => includeNpcs || !MySession.Static.Players.IdentityIsNpc(identity.IdentityId))
+            .Where(identity =>
+                includeNpcs || !MySession.Static.Players.IdentityIsNpc(identity.IdentityId)
+            )
             .ToList();
     }
 
@@ -804,7 +1147,8 @@ public sealed partial class EssentialsModule
     private static int CountOwnedGrids(IEnumerable<long> identityIds)
     {
         HashSet<long> ids = new HashSet<long>(identityIds);
-        return MyEntities.GetEntities()
+        return MyEntities
+            .GetEntities()
             .OfType<MyCubeGrid>()
             .Count(grid => grid.Projector == null && grid.BigOwners.Any(ids.Contains));
     }
@@ -814,7 +1158,11 @@ public sealed partial class EssentialsModule
         if (identityIds.Count == 0)
             return 0;
 
-        List<MyCubeGrid> grids = MyEntities.GetEntities().OfType<MyCubeGrid>().Where(grid => grid.Projector == null).ToList();
+        List<MyCubeGrid> grids = MyEntities
+            .GetEntities()
+            .OfType<MyCubeGrid>()
+            .Where(grid => grid.Projector == null)
+            .ToList();
         int count = 0;
 
         foreach (long identityId in identityIds.Where(id => id != 0))
@@ -824,9 +1172,18 @@ public sealed partial class EssentialsModule
                 if (grid.BigOwners.Count > 1)
                 {
                     long newOwnerId = grid.BigOwners.First(id => id != identityId);
-                    MyMultiplayer.RaiseEvent(grid, target => new Action<long, long>(target.TransferBlocksBuiltByID), identityId, newOwnerId, new EndpointId());
+                    MyMultiplayer.RaiseEvent(
+                        grid,
+                        target => new Action<long, long>(target.TransferBlocksBuiltByID),
+                        identityId,
+                        newOwnerId,
+                        new EndpointId()
+                    );
 
-                    foreach (MySlimBlock block in grid.GetBlocks().Where(block => block.FatBlock?.OwnerId == identityId))
+                    foreach (
+                        MySlimBlock block in grid.GetBlocks()
+                            .Where(block => block.FatBlock?.OwnerId == identityId)
+                    )
                         block.FatBlock.ChangeOwner(newOwnerId, MyOwnershipShareModeEnum.Faction);
 
                     grid.RecalculateOwners();
@@ -885,7 +1242,8 @@ public sealed partial class EssentialsModule
         foreach (MyCubeGrid grid in MyEntities.GetEntities().OfType<MyCubeGrid>())
         {
             long owner = grid.BigOwners.FirstOrDefault();
-            MyOwnershipShareModeEnum share = owner == 0 ? MyOwnershipShareModeEnum.All : MyOwnershipShareModeEnum.Faction;
+            MyOwnershipShareModeEnum share =
+                owner == 0 ? MyOwnershipShareModeEnum.All : MyOwnershipShareModeEnum.Faction;
             foreach (MyCubeBlock block in grid.GetFatBlocks())
             {
                 if (block.OwnerId == 0 || MySession.Static.Players.HasIdentity(block.OwnerId))
@@ -910,7 +1268,10 @@ public sealed partial class EssentialsModule
             int validMembers = 0;
             foreach (KeyValuePair<long, MyFactionMember> member in faction.Members)
             {
-                if (!MySession.Static.Players.HasIdentity(member.Key) && !MySession.Static.Players.IdentityIsNpc(member.Key))
+                if (
+                    !MySession.Static.Players.HasIdentity(member.Key)
+                    && !MySession.Static.Players.IdentityIsNpc(member.Key)
+                )
                     continue;
 
                 validMembers++;
@@ -959,20 +1320,32 @@ public sealed partial class EssentialsModule
     private static int CleanupReputations(HashSet<long> validIdentities)
     {
         HashSet<long> valid = new HashSet<long>(validIdentities);
-        foreach (MyIdentity identity in MySession.Static.Players.GetAllIdentities().OfType<MyIdentity>())
+        foreach (
+            MyIdentity identity in MySession.Static.Players.GetAllIdentities().OfType<MyIdentity>()
+        )
         {
             if (MySession.Static.Players.IdentityIsNpc(identity.IdentityId))
                 valid.Add(identity.IdentityId);
         }
 
-        foreach (KeyValuePair<long, MyFaction> faction in MySession.Static.Factions.Where(pair => pair.Value.Members.Count > 0))
+        foreach (
+            KeyValuePair<long, MyFaction> faction in MySession.Static.Factions.Where(pair =>
+                pair.Value.Members.Count > 0
+            )
+        )
             valid.Add(faction.Key);
 
         valid.Remove(0);
 
         int count = 0;
-        count += RemoveInvalidRelations(GetDictionaryField(MySession.Static.Factions, FactionRelationsField), valid);
-        count += RemoveInvalidRelations(GetDictionaryField(MySession.Static.Factions, PlayerFactionRelationsField), valid);
+        count += RemoveInvalidRelations(
+            GetDictionaryField(MySession.Static.Factions, FactionRelationsField),
+            valid
+        );
+        count += RemoveInvalidRelations(
+            GetDictionaryField(MySession.Static.Factions, PlayerFactionRelationsField),
+            valid
+        );
         return count;
     }
 
@@ -980,10 +1353,13 @@ public sealed partial class EssentialsModule
     {
         int count = 0;
         if (removeFactionToFaction)
-            count += GetDictionaryField(MySession.Static.Factions, FactionRelationsField)?.Count ?? 0;
+            count +=
+                GetDictionaryField(MySession.Static.Factions, FactionRelationsField)?.Count ?? 0;
 
         if (removePlayerToFaction)
-            count += GetDictionaryField(MySession.Static.Factions, PlayerFactionRelationsField)?.Count ?? 0;
+            count +=
+                GetDictionaryField(MySession.Static.Factions, PlayerFactionRelationsField)?.Count
+                ?? 0;
 
         return count;
     }
@@ -992,10 +1368,14 @@ public sealed partial class EssentialsModule
     {
         int count = 0;
         if (removeFactionToFaction)
-            count += ClearDictionary(GetDictionaryField(MySession.Static.Factions, FactionRelationsField));
+            count += ClearDictionary(
+                GetDictionaryField(MySession.Static.Factions, FactionRelationsField)
+            );
 
         if (removePlayerToFaction)
-            count += ClearDictionary(GetDictionaryField(MySession.Static.Factions, PlayerFactionRelationsField));
+            count += ClearDictionary(
+                GetDictionaryField(MySession.Static.Factions, PlayerFactionRelationsField)
+            );
 
         return count;
     }
@@ -1021,7 +1401,10 @@ public sealed partial class EssentialsModule
             if (entry.Key is not MyFactionCollection.MyRelatablePair pair)
                 continue;
 
-            if (!validIdentities.Contains(pair.RelateeId1) || !validIdentities.Contains(pair.RelateeId2))
+            if (
+                !validIdentities.Contains(pair.RelateeId1)
+                || !validIdentities.Contains(pair.RelateeId2)
+            )
                 remove.Add(entry.Key);
         }
 
@@ -1052,7 +1435,8 @@ public sealed partial class EssentialsModule
 
     private static int ClearProceduralSeeds()
     {
-        MyProceduralWorldGenerator generator = MySession.Static.GetComponent<MyProceduralWorldGenerator>();
+        MyProceduralWorldGenerator generator =
+            MySession.Static.GetComponent<MyProceduralWorldGenerator>();
         return ClearCollectionField(generator, SeedParamsField);
     }
 
@@ -1071,8 +1455,8 @@ public sealed partial class EssentialsModule
         return count;
     }
 
-    private static IDictionary GetDictionaryField(object instance, FieldInfo field)
-        => instance == null || field == null ? null : field.GetValue(instance) as IDictionary;
+    private static IDictionary GetDictionaryField(object instance, FieldInfo field) =>
+        instance == null || field == null ? null : field.GetValue(instance) as IDictionary;
 
     private static int ClearCollectionField(object instance, FieldInfo field)
     {

@@ -123,20 +123,31 @@ public struct CommandStep
     [StructMember("What this step does. Use 'Run command line' to run the line in Command.")]
     public StepAction Action { get; set; }
 
-    [StructMember("Command line for 'Run command line' (e.g. !ess broadcast Hi), " +
-                  "the message for Announce/Notify, or the auto command name for 'Run another auto command'."), StructCaption]
+    [
+        StructMember(
+            "Command line for 'Run command line' (e.g. !ess broadcast Hi), "
+                + "the message for Announce/Notify, or the auto command name for 'Run another auto command'."
+        ),
+        StructCaption
+    ]
     public string Command { get; set; }
 
-    [StructMember("Optional colour for Announce: 'R G B' (0-255) or a name like Red. Also used by legacy Notify steps when NotifyFont is Default.")]
+    [StructMember(
+        "Optional colour for Announce: 'R G B' (0-255) or a name like Red. Also used by legacy Notify steps when NotifyFont is Default."
+    )]
     public string Color { get; set; }
 
-    [StructMember("HUD font for Notify. Default uses the legacy Color setting, or White when Color is empty.")]
+    [StructMember(
+        "HUD font for Notify. Default uses the legacy Color setting, or White when Color is empty."
+    )]
     public NotificationFont NotifyFont { get; set; }
 
     [StructMember("Notify display time in milliseconds (0 = default 5000).")]
     public int NotifyDurationMs { get; set; }
 
-    [StructMember("Optional shell script/command run before the action. The sequence waits for it to finish.")]
+    [StructMember(
+        "Optional shell script/command run before the action. The sequence waits for it to finish."
+    )]
     public string ShellScript { get; set; }
 
     [StructMember("Maximum seconds to wait for the shell script (0 = wait indefinitely).")]
@@ -151,7 +162,10 @@ public struct CommandStep
 /// </summary>
 public struct AutoCommand
 {
-    [StructMember("Unique name. Use it with !ess runauto <name> and the RunAuto step action."), StructCaption]
+    [
+        StructMember("Unique name. Use it with !ess runauto <name> and the RunAuto step action."),
+        StructCaption
+    ]
     public string Name { get; set; }
 
     [StructMember("When this command starts on its own.")]
@@ -160,8 +174,10 @@ public struct AutoCommand
     [StructMember("Comparison used by the Player count / Grid count / Simulation speed triggers.")]
     public TriggerCompare Compare { get; set; }
 
-    [StructMember("Timed: repeat interval (HH:MM:SS). Scheduled: time of day (HH:MM:SS). " +
-                  "Count/SimSpeed triggers: re-check cooldown.")]
+    [StructMember(
+        "Timed: repeat interval (HH:MM:SS). Scheduled: time of day (HH:MM:SS). "
+            + "Count/SimSpeed triggers: re-check cooldown."
+    )]
     public string Interval { get; set; }
 
     [StructMember("Scheduled trigger: which day(s) to run.")]
@@ -170,8 +186,10 @@ public struct AutoCommand
     [StructMember("SimSpeed/Vote triggers: ratio 0..1 (0.5 = 50%).")]
     public float TriggerRatio { get; set; }
 
-    [StructMember("Player count / Grid count triggers: the count to compare against. " +
-                  "SimSpeed: seconds the condition must hold before firing.")]
+    [StructMember(
+        "Player count / Grid count triggers: the count to compare against. "
+            + "SimSpeed: seconds the condition must hold before firing."
+    )]
     public double TriggerCount { get; set; }
 
     [StructMember("Steps run in order when the command starts.")]

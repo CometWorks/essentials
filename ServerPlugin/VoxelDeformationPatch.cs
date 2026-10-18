@@ -10,8 +10,11 @@ namespace ServerPlugin;
 // Suppressing only their queue entry keeps the collision response in the game's hands.
 internal static class VoxelDeformationPatch
 {
-    [ThreadStatic] private static int missileExplosionDepth;
-    [ThreadStatic] private static int meteorDeformationDepth;
+    [ThreadStatic]
+    private static int missileExplosionDepth;
+
+    [ThreadStatic]
+    private static int meteorDeformationDepth;
 
     [HarmonyPatch(typeof(MyMissile), "ExecuteExplosion")]
     private static class MissileExplosion
@@ -33,7 +36,11 @@ internal static class VoxelDeformationPatch
         private static void Prefix(ref MyExplosionInfo explosionInfo)
         {
             var config = Plugin.Instance?.PluginConfig;
-            if (missileExplosionDepth > 0 && config?.Enabled == true && config.ProtectVoxelsFromMissiles)
+            if (
+                missileExplosionDepth > 0
+                && config?.Enabled == true
+                && config.ProtectVoxelsFromMissiles
+            )
                 explosionInfo.AffectVoxels = false;
         }
     }

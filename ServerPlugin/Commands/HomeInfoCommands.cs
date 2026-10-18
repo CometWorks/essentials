@@ -21,7 +21,13 @@ public sealed partial class EssentialsModule
             return error;
 
         int maxHomes = Plugin.Instance?.PluginConfig?.MaxHomesPerPlayer ?? 3;
-        return HomeStore.TryAdd(Context.Caller.SteamId, homeName, player.GetPosition(), maxHomes, out error)
+        return HomeStore.TryAdd(
+            Context.Caller.SteamId,
+            homeName,
+            player.GetPosition(),
+            maxHomes,
+            out error
+        )
             ? "Home successfully added."
             : error;
     }
@@ -52,7 +58,9 @@ public sealed partial class EssentialsModule
             return "Only players can use homes.";
 
         IReadOnlyList<string> homes = HomeStore.List(Context.Caller.SteamId);
-        return homes.Count == 0 ? "You do not have any homes." : "List of homes: " + string.Join(", ", homes);
+        return homes.Count == 0
+            ? "You do not have any homes."
+            : "List of homes: " + string.Join(", ", homes);
     }
 
     [Command("home goto", "Teleport to a saved home.")]
@@ -65,7 +73,10 @@ public sealed partial class EssentialsModule
         if (!TryGetCallerPlayerForHomes(out MyPlayer player, out string error))
             return error;
 
-        if (player.Controller?.ControlledEntity is MyCockpit || player.Character?.UsingEntity is MyCockpit)
+        if (
+            player.Controller?.ControlledEntity is MyCockpit
+            || player.Character?.UsingEntity is MyCockpit
+        )
             return "You cannot use !ess home while in control of a grid.";
 
         if (!HomeStore.TryGet(Context.Caller.SteamId, homeName, out Vector3D targetPosition))
@@ -82,16 +93,21 @@ public sealed partial class EssentialsModule
     {
         List<string> commands = InfoCommandHandler.ConfiguredNames(Plugin.Instance?.PluginConfig);
 
-        return commands.Count == 0 ? "No info commands are configured." : string.Join(", ", commands);
+        return commands.Count == 0
+            ? "No info commands are configured."
+            : string.Join(", ", commands);
     }
 
-    private static bool HomesEnabled()
-        => Plugin.Instance?.PluginConfig?.HomesEnabled == true;
+    private static bool HomesEnabled() => Plugin.Instance?.PluginConfig?.HomesEnabled == true;
 
     private bool TryGetCallerPlayerForHomes(out MyPlayer player, out string error)
     {
         player = null;
-        if (Context.Caller.IsConsole || Context.Caller.SteamId == 0 || Context.Caller.IdentityId == 0)
+        if (
+            Context.Caller.IsConsole
+            || Context.Caller.SteamId == 0
+            || Context.Caller.IdentityId == 0
+        )
         {
             error = "Only players can use homes.";
             return false;

@@ -6,7 +6,8 @@ namespace ServerPlugin.PcuTransfer;
 
 public sealed class LimitCheckResponse
 {
-    private readonly Dictionary<MyCubeBlockDefinition, int> overLimitBlocks = new Dictionary<MyCubeBlockDefinition, int>();
+    private readonly Dictionary<MyCubeBlockDefinition, int> overLimitBlocks =
+        new Dictionary<MyCubeBlockDefinition, int>();
 
     public int PcuLimit { get; set; }
     public int CurrentPcu { get; set; }

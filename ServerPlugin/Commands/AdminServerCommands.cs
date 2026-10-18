@@ -33,11 +33,19 @@ public sealed partial class EssentialsModule
         if (!TryResolvePlayer(playerNameOrId, out PlayerLookup player))
             return $"Player '{playerNameOrId}' not found or ID is invalid.";
 
-        if (!Enum.TryParse(rank, true, out MyPromoteLevel promoteLevel) || promoteLevel > MyPromoteLevel.Admin)
+        if (
+            !Enum.TryParse(rank, true, out MyPromoteLevel promoteLevel)
+            || promoteLevel > MyPromoteLevel.Admin
+        )
             return $"Invalid rank '{rank}'. Valid ranks: None, Scripter, Moderator, SpaceMaster, Admin.";
 
         MySession.Static.SetUserPromoteLevel(player.SteamId, promoteLevel);
-        Plugin.Instance?.Log.Info("Set promote level for {0} ({1}) to {2}", player.DisplayName, player.SteamId, promoteLevel);
+        Plugin.Instance?.Log.Info(
+            "Set promote level for {0} ({1}) to {2}",
+            player.DisplayName,
+            player.SteamId,
+            promoteLevel
+        );
         return $"Player '{player.DisplayName}' promoted to '{promoteLevel}'.";
     }
 
@@ -53,7 +61,11 @@ public sealed partial class EssentialsModule
 
         MySandboxGame.ConfigDedicated.Reserved.Add(player.SteamId);
         MySandboxGame.ConfigDedicated.Save();
-        Plugin.Instance?.Log.Info("Reserved slot for {0} ({1})", player.DisplayName, player.SteamId);
+        Plugin.Instance?.Log.Info(
+            "Reserved slot for {0} ({1})",
+            player.DisplayName,
+            player.SteamId
+        );
         return $"ID {player.SteamId} added to reserved slots.";
     }
 
@@ -68,7 +80,11 @@ public sealed partial class EssentialsModule
             return $"ID {player.SteamId} is already unreserved.";
 
         MySandboxGame.ConfigDedicated.Save();
-        Plugin.Instance?.Log.Info("Unreserved slot for {0} ({1})", player.DisplayName, player.SteamId);
+        Plugin.Instance?.Log.Info(
+            "Unreserved slot for {0} ({1})",
+            player.DisplayName,
+            player.SteamId
+        );
         return $"ID {player.SteamId} removed from reserved slots.";
     }
 
@@ -79,36 +95,58 @@ public sealed partial class EssentialsModule
         if (quantity <= 0)
             return "Quantity must be greater than zero.";
 
-        if (!MyDefinitionId.TryParse("MyObjectBuilder_" + itemType, itemSubtype, out MyDefinitionId definitionId) ||
-            definitionId.TypeId.IsNull)
+        if (
+            !MyDefinitionId.TryParse(
+                "MyObjectBuilder_" + itemType,
+                itemSubtype,
+                out MyDefinitionId definitionId
+            ) || definitionId.TypeId.IsNull
+        )
             return "Invalid item type or subtype.";
 
         if (string.Equals(playerName, "*", StringComparison.InvariantCultureIgnoreCase))
         {
             int affected = 0;
-            foreach (MyPlayer player in Utilities.GetOnlinePlayers().Where(player => player.Identity?.IdentityId != 0))
+            foreach (
+                MyPlayer player in Utilities
+                    .GetOnlinePlayers()
+                    .Where(player => player.Identity?.IdentityId != 0)
+            )
             {
-                MyVisualScriptLogicProvider.AddToPlayersInventory(player.Identity.IdentityId, definitionId, quantity);
+                MyVisualScriptLogicProvider.AddToPlayersInventory(
+                    player.Identity.IdentityId,
+                    definitionId,
+                    quantity
+                );
                 MyVisualScriptLogicProvider.ShowNotification(
                     $"You have been given {quantity:#,##0} {itemSubtype} {itemType}",
                     5000,
                     MyFontEnum.Blue,
-                    player.Identity.IdentityId);
+                    player.Identity.IdentityId
+                );
                 affected++;
             }
 
             return $"Item(s) given to {affected:#,##0} online player(s).";
         }
 
-        if (Utilities.GetPlayerByNameOrId(playerName) is not MyPlayer target || target.Identity?.IdentityId == 0)
+        if (
+            Utilities.GetPlayerByNameOrId(playerName) is not MyPlayer target
+            || target.Identity?.IdentityId == 0
+        )
             return "Player not found.";
 
-        MyVisualScriptLogicProvider.AddToPlayersInventory(target.Identity.IdentityId, definitionId, quantity);
+        MyVisualScriptLogicProvider.AddToPlayersInventory(
+            target.Identity.IdentityId,
+            definitionId,
+            quantity
+        );
         MyVisualScriptLogicProvider.ShowNotification(
             $"You have been given {quantity:#,##0} {itemSubtype} {itemType}",
             5000,
             MyFontEnum.Blue,
-            target.Identity.IdentityId);
+            target.Identity.IdentityId
+        );
         return "Item(s) given.";
     }
 
@@ -126,13 +164,11 @@ public sealed partial class EssentialsModule
 
     [Command("ban", "Ban a player from the game.")]
     [Permission(MyPromoteLevel.Moderator)]
-    public string Ban(string nameOrSteamId)
-        => SetBanState(nameOrSteamId, banned: true);
+    public string Ban(string nameOrSteamId) => SetBanState(nameOrSteamId, banned: true);
 
     [Command("unban", "Unban a player from the game.")]
     [Permission(MyPromoteLevel.Moderator)]
-    public string Unban(string nameOrSteamId)
-        => SetBanState(nameOrSteamId, banned: false);
+    public string Unban(string nameOrSteamId) => SetBanState(nameOrSteamId, banned: false);
 
     private string SetBanState(string nameOrSteamId, bool banned)
     {
@@ -143,7 +179,15 @@ public sealed partial class EssentialsModule
             steamId = player.SteamId;
             displayName = player.DisplayName;
         }
-        else if (ulong.TryParse(nameOrSteamId, NumberStyles.Integer, CultureInfo.InvariantCulture, out ulong parsedSteamId) && parsedSteamId != 0)
+        else if (
+            ulong.TryParse(
+                nameOrSteamId,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out ulong parsedSteamId
+            )
+            && parsedSteamId != 0
+        )
         {
             steamId = parsedSteamId;
             displayName = steamId.ToString(CultureInfo.InvariantCulture);
@@ -155,7 +199,12 @@ public sealed partial class EssentialsModule
 
         MyMultiplayer.Static?.BanClient(steamId, banned);
         MySandboxGame.ConfigDedicated.Save();
-        Plugin.Instance?.Log.Info("{0} {1} ({2})", banned ? "Banned" : "Unbanned", displayName, steamId);
+        Plugin.Instance?.Log.Info(
+            "{0} {1} ({2})",
+            banned ? "Banned" : "Unbanned",
+            displayName,
+            steamId
+        );
         return banned
             ? $"Player {displayName} banned. ({steamId})"
             : $"Player {displayName} unbanned. ({steamId})";

@@ -13,11 +13,18 @@ namespace ServerPlugin.Commands;
 
 public sealed partial class EssentialsModule
 {
-    private static readonly Dictionary<string, DateTime> PcuTransferConfirmations = new Dictionary<string, DateTime>();
+    private static readonly Dictionary<string, DateTime> PcuTransferConfirmations =
+        new Dictionary<string, DateTime>();
     private static readonly PcuTransferCore PcuTransferCoreInstance = new PcuTransferCore();
     private const int ConfirmationSeconds = 30;
 
-    private void TransferToPlayer(string playerName, string gridName, bool pcu, bool ownership, bool force)
+    private void TransferToPlayer(
+        string playerName,
+        string gridName,
+        bool pcu,
+        bool ownership,
+        bool force
+    )
     {
         if (string.IsNullOrWhiteSpace(playerName))
         {
@@ -37,7 +44,9 @@ public sealed partial class EssentialsModule
 
         if (string.IsNullOrWhiteSpace(gridName))
         {
-            MyCharacter character = GetCallerCharacter("Console has no Character so cannot use this command. Use !ess transfer <playerName> <gridname> instead!");
+            MyCharacter character = GetCallerCharacter(
+                "Console has no Character so cannot use this command. Use !ess transfer <playerName> <gridname> instead!"
+            );
             if (character == null)
                 return;
 
@@ -49,13 +58,23 @@ public sealed partial class EssentialsModule
             groups = GridGroupFinder.FindGridGroup(gridName);
         }
 
-        string confirmationKey = $"{PcuTransferPlayerKey()}:{confirmGridName}:{author.IdentityId}:{pcu}:{ownership}:{force}";
+        string confirmationKey =
+            $"{PcuTransferPlayerKey()}:{confirmGridName}:{author.IdentityId}:{pcu}:{ownership}:{force}";
         if (!CheckConfirmation(confirmationKey, groups, author, pcu, force))
             return;
 
         try
         {
-            if (!PcuTransferCoreInstance.TryGetTransferGroup(groups, author, pcu, force, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+            if (
+                !PcuTransferCoreInstance.TryGetTransferGroup(
+                    groups,
+                    author,
+                    pcu,
+                    force,
+                    out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                    out string error
+                )
+            )
             {
                 Context.Respond(error);
                 return;
@@ -78,7 +97,9 @@ public sealed partial class EssentialsModule
 
         if (string.IsNullOrWhiteSpace(gridName))
         {
-            MyCharacter character = GetCallerCharacter("Console has no Character so cannot use this command. Use !ess transfernobody <gridname> instead!");
+            MyCharacter character = GetCallerCharacter(
+                "Console has no Character so cannot use this command. Use !ess transfernobody <gridname> instead!"
+            );
             if (character == null)
                 return;
 
@@ -90,13 +111,20 @@ public sealed partial class EssentialsModule
             groups = GridGroupFinder.FindGridGroup(gridName);
         }
 
-        string confirmationKey = $"{PcuTransferPlayerKey()}:{confirmGridName}:0:{pcu}:{ownership}:false";
+        string confirmationKey =
+            $"{PcuTransferPlayerKey()}:{confirmGridName}:0:{pcu}:{ownership}:false";
         if (!CheckConfirmationNobody(confirmationKey, groups))
             return;
 
         try
         {
-            if (!PcuTransferCoreInstance.TryGetNobodyTransferGroup(groups, out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group, out string error))
+            if (
+                !PcuTransferCoreInstance.TryGetNobodyTransferGroup(
+                    groups,
+                    out MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group group,
+                    out string error
+                )
+            )
             {
                 Context.Respond(error);
                 return;
@@ -117,32 +145,51 @@ public sealed partial class EssentialsModule
         ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups,
         MyIdentity author,
         bool pcu,
-        bool force)
+        bool force
+    )
     {
         DateTime now = DateTime.UtcNow;
-        if (PcuTransferConfirmations.TryGetValue(confirmationKey, out DateTime expiresAt) && expiresAt >= now)
+        if (
+            PcuTransferConfirmations.TryGetValue(confirmationKey, out DateTime expiresAt)
+            && expiresAt >= now
+        )
         {
             PcuTransferConfirmations.Remove(confirmationKey);
             return true;
         }
 
-        if (!PcuTransferCoreInstance.TryGetTransferGroup(groups, author, pcu, force, out _, out string error))
+        if (
+            !PcuTransferCoreInstance.TryGetTransferGroup(
+                groups,
+                author,
+                pcu,
+                force,
+                out _,
+                out string error
+            )
+        )
         {
             Context.Respond(error);
             return false;
         }
 
         PcuTransferConfirmations[confirmationKey] = now.AddSeconds(ConfirmationSeconds);
-        Context.Respond("Are you sure you want to continue? Enter the command again within 30 seconds to confirm.");
+        Context.Respond(
+            "Are you sure you want to continue? Enter the command again within 30 seconds to confirm."
+        );
         return false;
     }
 
     private bool CheckConfirmationNobody(
         string confirmationKey,
-        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups)
+        ConcurrentBag<MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Group> groups
+    )
     {
         DateTime now = DateTime.UtcNow;
-        if (PcuTransferConfirmations.TryGetValue(confirmationKey, out DateTime expiresAt) && expiresAt >= now)
+        if (
+            PcuTransferConfirmations.TryGetValue(confirmationKey, out DateTime expiresAt)
+            && expiresAt >= now
+        )
         {
             PcuTransferConfirmations.Remove(confirmationKey);
             return true;
@@ -155,7 +202,9 @@ public sealed partial class EssentialsModule
         }
 
         PcuTransferConfirmations[confirmationKey] = now.AddSeconds(ConfirmationSeconds);
-        Context.Respond("Are you sure you want to continue? Enter the command again within 30 seconds to confirm.");
+        Context.Respond(
+            "Are you sure you want to continue? Enter the command again within 30 seconds to confirm."
+        );
         return false;
     }
 
@@ -171,7 +220,9 @@ public sealed partial class EssentialsModule
         if (player?.Character is MyCharacter character)
             return character;
 
-        Context.Respond("You have no Character currently. Make sure to spawn and be out of cockpit!");
+        Context.Respond(
+            "You have no Character currently. Make sure to spawn and be out of cockpit!"
+        );
         return null;
     }
 
@@ -213,41 +264,41 @@ public sealed partial class EssentialsModule
 {
     [Command("transfer", "Transfers PCU and ownership to a player.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void Transfer(string playerName = null, string gridName = null)
-        => TransferToPlayer(playerName, gridName, pcu: true, ownership: true, force: false);
+    public void Transfer(string playerName = null, string gridName = null) =>
+        TransferToPlayer(playerName, gridName, pcu: true, ownership: true, force: false);
 
     [Command("forcetransfer", "Transfers PCU and ownership to a player, ignoring limits.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void ForceTransfer(string playerName = null, string gridName = null)
-        => TransferToPlayer(playerName, gridName, pcu: true, ownership: true, force: true);
+    public void ForceTransfer(string playerName = null, string gridName = null) =>
+        TransferToPlayer(playerName, gridName, pcu: true, ownership: true, force: true);
 
     [Command("transferpcu", "Transfers PCU to a player.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TransferPcu(string playerName = null, string gridName = null)
-        => TransferToPlayer(playerName, gridName, pcu: true, ownership: false, force: false);
+    public void TransferPcu(string playerName = null, string gridName = null) =>
+        TransferToPlayer(playerName, gridName, pcu: true, ownership: false, force: false);
 
     [Command("forcetransferpcu", "Transfers PCU to a player, ignoring limits.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void ForceTransferPcu(string playerName = null, string gridName = null)
-        => TransferToPlayer(playerName, gridName, pcu: true, ownership: false, force: true);
+    public void ForceTransferPcu(string playerName = null, string gridName = null) =>
+        TransferToPlayer(playerName, gridName, pcu: true, ownership: false, force: true);
 
     [Command("transferowner", "Transfers ownership to a player.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TransferOwner(string playerName = null, string gridName = null)
-        => TransferToPlayer(playerName, gridName, pcu: false, ownership: true, force: false);
+    public void TransferOwner(string playerName = null, string gridName = null) =>
+        TransferToPlayer(playerName, gridName, pcu: false, ownership: true, force: false);
 
     [Command("transfernobody", "Removes PCU and ownership.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TransferNobody(string gridName = null)
-        => TransferToNobody(gridName, pcu: true, ownership: true);
+    public void TransferNobody(string gridName = null) =>
+        TransferToNobody(gridName, pcu: true, ownership: true);
 
     [Command("transferpcunobody", "Removes PCU.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TransferPcuNobody(string gridName = null)
-        => TransferToNobody(gridName, pcu: true, ownership: false);
+    public void TransferPcuNobody(string gridName = null) =>
+        TransferToNobody(gridName, pcu: true, ownership: false);
 
     [Command("transferownernobody", "Removes ownership.")]
     [Permission(MyPromoteLevel.SpaceMaster)]
-    public void TransferOwnerNobody(string gridName = null)
-        => TransferToNobody(gridName, pcu: false, ownership: true);
+    public void TransferOwnerNobody(string gridName = null) =>
+        TransferToNobody(gridName, pcu: false, ownership: true);
 }

@@ -16,7 +16,14 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public void Give(string player, long amount, bool onlyOnline = false, bool excludeNpcs = true)
     {
-        if (!TryFindPlayerIdentities(player, onlyOnline, excludeNpcs, out List<long> foundIdentities))
+        if (
+            !TryFindPlayerIdentities(
+                player,
+                onlyOnline,
+                excludeNpcs,
+                out List<long> foundIdentities
+            )
+        )
         {
             Context.Respond("Player cannot be found!");
             return;
@@ -36,7 +43,14 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public void Take(string player, long amount, bool onlyOnline = false, bool excludeNpcs = true)
     {
-        if (!TryFindPlayerIdentities(player, onlyOnline, excludeNpcs, out List<long> foundIdentities))
+        if (
+            !TryFindPlayerIdentities(
+                player,
+                onlyOnline,
+                excludeNpcs,
+                out List<long> foundIdentities
+            )
+        )
         {
             Context.Respond("Player cannot be found!");
             return;
@@ -56,7 +70,14 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.Admin)]
     public void Set(string player, long amount, bool onlyOnline = false, bool excludeNpcs = true)
     {
-        if (!TryFindPlayerIdentities(player, onlyOnline, excludeNpcs, out List<long> foundIdentities))
+        if (
+            !TryFindPlayerIdentities(
+                player,
+                onlyOnline,
+                excludeNpcs,
+                out List<long> foundIdentities
+            )
+        )
         {
             Context.Respond("Player cannot be found!");
             return;
@@ -73,16 +94,24 @@ public sealed partial class EssentialsModule
         Context.Respond($"Balance(s) set to {amount:#,##0} on {changedIdentities:#,##0} accounts");
     }
 
-    [Command("econ reset", "Reset credits in a player's account to 10,000. Use '*' to affect all players.")]
+    [Command(
+        "econ reset",
+        "Reset credits in a player's account to 10,000. Use '*' to affect all players."
+    )]
     [Permission(MyPromoteLevel.Admin)]
-    public void Reset(string player, bool onlyOnline = false, bool excludeNpcs = true)
-        => Set(player, 10_000, onlyOnline, excludeNpcs);
+    public void Reset(string player, bool onlyOnline = false, bool excludeNpcs = true) =>
+        Set(player, 10_000, onlyOnline, excludeNpcs);
 
     [Command("econ top", "Return player balances sorted highest to lowest.")]
     [Permission(MyPromoteLevel.None)]
     public string Top(bool onlyOnline = false, bool excludeNpcs = true)
     {
-        return BuildPlayerBalanceReport("Summary of balances across the server", null, onlyOnline, excludeNpcs);
+        return BuildPlayerBalanceReport(
+            "Summary of balances across the server",
+            null,
+            onlyOnline,
+            excludeNpcs
+        );
     }
 
     [Command("econ check", "Check a player's balance.")]
@@ -143,7 +172,8 @@ public sealed partial class EssentialsModule
             "!ess eco withdraw <amount>",
             "!ess eco resetplayer <player>",
             "!ess eco resetfac <tag>",
-            "Native aliases: !ess econ give/take/set/reset/top/check/pay");
+            "Native aliases: !ess econ give/take/set/reset/top/check/pay"
+        );
     }
 
     [Command("eco balance", "Show a player or faction balance.")]
@@ -173,7 +203,12 @@ public sealed partial class EssentialsModule
 
         return factions
             ? BuildFactionBalanceReport($"Top {limit:#,##0} faction balances", limit)
-            : BuildPlayerBalanceReport($"Top {limit:#,##0} player balances", limit, onlyOnline: false, excludeNpcs: true);
+            : BuildPlayerBalanceReport(
+                $"Top {limit:#,##0} player balances",
+                limit,
+                onlyOnline: false,
+                excludeNpcs: true
+            );
     }
 
     [Command("eco give", "Economy alias for econ give, with faction support.")]
@@ -195,7 +230,9 @@ public sealed partial class EssentialsModule
                 ChangeFactionBalance(recipient, amount);
                 return;
             default:
-                Context.Respond("Incorrect usage, example: !ess eco give player <player|*> <amount> or !ess eco give faction <tag> <amount>");
+                Context.Respond(
+                    "Incorrect usage, example: !ess eco give player <player|*> <amount> or !ess eco give faction <tag> <amount>"
+                );
                 return;
         }
     }
@@ -219,7 +256,9 @@ public sealed partial class EssentialsModule
                 ChangeFactionBalance(recipient, -amount);
                 return;
             default:
-                Context.Respond("Incorrect usage, example: !ess eco take player <player|*> <amount> or !ess eco take faction <tag> <amount>");
+                Context.Respond(
+                    "Incorrect usage, example: !ess eco take player <player|*> <amount> or !ess eco take faction <tag> <amount>"
+                );
                 return;
         }
     }
@@ -331,7 +370,12 @@ public sealed partial class EssentialsModule
         MyBankingSystem.ChangeBalance(identityId, amount);
     }
 
-    private static bool TryTransferCredits(long fromIdentityId, long toIdentityId, long amount, out string error)
+    private static bool TryTransferCredits(
+        long fromIdentityId,
+        long toIdentityId,
+        long amount,
+        out string error
+    )
     {
         if (amount <= 0)
         {
@@ -355,12 +399,22 @@ public sealed partial class EssentialsModule
         }
 
         long finalToBalance = toBalance + amount;
-        MyBankingSystem.RequestTransfer_BroadcastToClients(fromIdentityId, toIdentityId, amount, finalFromBalance, finalToBalance);
+        MyBankingSystem.RequestTransfer_BroadcastToClients(
+            fromIdentityId,
+            toIdentityId,
+            amount,
+            finalFromBalance,
+            finalToBalance
+        );
         error = null;
         return true;
     }
 
-    private static bool TryParsePositiveAmount(string inputAmount, out long amount, out string error)
+    private static bool TryParsePositiveAmount(
+        string inputAmount,
+        out long amount,
+        out string error
+    )
     {
         amount = 0;
         string normalized = (inputAmount ?? string.Empty)
@@ -368,7 +422,14 @@ public sealed partial class EssentialsModule
             .Replace(".", string.Empty)
             .Replace(" ", string.Empty);
 
-        if (!long.TryParse(normalized, NumberStyles.Integer, CultureInfo.InvariantCulture, out amount))
+        if (
+            !long.TryParse(
+                normalized,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out amount
+            )
+        )
         {
             error = "Error parsing into number";
             return false;
@@ -384,7 +445,12 @@ public sealed partial class EssentialsModule
         return true;
     }
 
-    private static string BuildPlayerBalanceReport(string header, int? limit, bool onlyOnline, bool excludeNpcs)
+    private static string BuildPlayerBalanceReport(
+        string header,
+        int? limit,
+        bool onlyOnline,
+        bool excludeNpcs
+    )
     {
         TryFindPlayerIdentities("*", onlyOnline, excludeNpcs, out List<long> foundIdentities);
 
@@ -405,7 +471,9 @@ public sealed partial class EssentialsModule
         StringBuilder data = new StringBuilder();
         data.AppendLine(header);
         foreach (KeyValuePair<IMyIdentity, long> value in sorted)
-            data.AppendLine($"Player: {value.Key.DisplayName} - Balance: {FormatCredits(value.Value)}");
+            data.AppendLine(
+                $"Player: {value.Key.DisplayName} - Balance: {FormatCredits(value.Value)}"
+            );
 
         return data.ToString();
     }
@@ -415,24 +483,34 @@ public sealed partial class EssentialsModule
         StringBuilder data = new StringBuilder();
         data.AppendLine(header);
 
-        foreach (MyFaction faction in MySession.Static.Factions.Select(pair => pair.Value)
-                     .OrderByDescending(faction => MyBankingSystem.GetBalance(faction.FactionId))
-                     .ThenBy(faction => faction.Tag)
-                     .Take(limit))
+        foreach (
+            MyFaction faction in MySession
+                .Static.Factions.Select(pair => pair.Value)
+                .OrderByDescending(faction => MyBankingSystem.GetBalance(faction.FactionId))
+                .ThenBy(faction => faction.Tag)
+                .Take(limit)
+        )
         {
-            data.AppendLine($"{faction.Name} - {faction.Tag} - Balance: {FormatCredits(MyBankingSystem.GetBalance(faction.FactionId))}");
+            data.AppendLine(
+                $"{faction.Name} - {faction.Tag} - Balance: {FormatCredits(MyBankingSystem.GetBalance(faction.FactionId))}"
+            );
         }
 
         return data.ToString();
     }
 
-    private static string NormalizeEcoType(string type)
-        => (type ?? string.Empty).Trim().ToLowerInvariant();
+    private static string NormalizeEcoType(string type) =>
+        (type ?? string.Empty).Trim().ToLowerInvariant();
 
-    private static string FormatCredits(long amount)
-        => amount.ToString("#,##0", CultureInfo.InvariantCulture);
+    private static string FormatCredits(long amount) =>
+        amount.ToString("#,##0", CultureInfo.InvariantCulture);
 
-    private static bool TryFindPlayerIdentities(string playerName, bool onlyOnline, bool excludeNpcs, out List<long> foundIdentities)
+    private static bool TryFindPlayerIdentities(
+        string playerName,
+        bool onlyOnline,
+        bool excludeNpcs,
+        out List<long> foundIdentities
+    )
     {
         List<long> relevantIdentities = new List<long>();
         var players = MySession.Static.Players;
@@ -450,16 +528,22 @@ public sealed partial class EssentialsModule
         }
         else
         {
-            relevantIdentities.AddRange(players.GetAllIdentities().Select(identity => identity.IdentityId));
+            relevantIdentities.AddRange(
+                players.GetAllIdentities().Select(identity => identity.IdentityId)
+            );
         }
 
         IEnumerable<long> identitiesToCheck = relevantIdentities;
 
         if (onlyOnline)
-            identitiesToCheck = identitiesToCheck.Where(identityId => players.IsPlayerOnline(identityId));
+            identitiesToCheck = identitiesToCheck.Where(identityId =>
+                players.IsPlayerOnline(identityId)
+            );
 
         if (excludeNpcs)
-            identitiesToCheck = identitiesToCheck.Where(identityId => !players.IdentityIsNpc(identityId));
+            identitiesToCheck = identitiesToCheck.Where(identityId =>
+                !players.IdentityIsNpc(identityId)
+            );
 
         foundIdentities = identitiesToCheck.ToList();
         return true;

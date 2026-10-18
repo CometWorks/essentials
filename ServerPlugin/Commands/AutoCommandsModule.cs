@@ -41,29 +41,33 @@ public sealed partial class EssentialsModule
         if (string.IsNullOrWhiteSpace(message))
             return "Usage: !ess notify <message> [durationMs] [font]";
 
-        MyVisualScriptLogicProvider.ShowNotificationToAll(message, durationMs > 0 ? durationMs : 5000, font);
+        MyVisualScriptLogicProvider.ShowNotificationToAll(
+            message,
+            durationMs > 0 ? durationMs : 5000,
+            font
+        );
         return "Notification sent.";
     }
 
     [Command("save", "Save the world.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string Save()
-        => ServerControl.SaveWorld() ? "World saved." : "No world is loaded.";
+    public string Save() => ServerControl.SaveWorld() ? "World saved." : "No world is loaded.";
 
     [Command("reload", "Save the world and reload the dedicated server config.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string Reload()
-        => ServerControl.ReloadConfig() ? "Configuration reloaded." : "No world is loaded.";
+    public string Reload() =>
+        ServerControl.ReloadConfig() ? "Configuration reloaded." : "No world is loaded.";
 
     [Command("restart", "Run the configured restart sequence, or restart now with 'now'.")]
     [Permission(MyPromoteLevel.Admin)]
     public string Restart(string mode = null)
     {
         AutoCommandExecutor executor = Plugin.Instance?.AutoCommands;
-        bool immediate = Context.Caller.IsConsole
-                         || string.Equals(mode, "now", StringComparison.OrdinalIgnoreCase)
-                         || executor == null
-                         || string.IsNullOrWhiteSpace(executor.RestartSequenceName);
+        bool immediate =
+            Context.Caller.IsConsole
+            || string.Equals(mode, "now", StringComparison.OrdinalIgnoreCase)
+            || executor == null
+            || string.IsNullOrWhiteSpace(executor.RestartSequenceName);
 
         if (!immediate && executor.RunByName(executor.RestartSequenceName))
             return $"Restart sequence '{executor.RestartSequenceName}' started.";
@@ -77,10 +81,11 @@ public sealed partial class EssentialsModule
     public string Stop(string mode = null)
     {
         AutoCommandExecutor executor = Plugin.Instance?.AutoCommands;
-        bool immediate = Context.Caller.IsConsole
-                         || string.Equals(mode, "now", StringComparison.OrdinalIgnoreCase)
-                         || executor == null
-                         || string.IsNullOrWhiteSpace(executor.ShutdownSequenceName);
+        bool immediate =
+            Context.Caller.IsConsole
+            || string.Equals(mode, "now", StringComparison.OrdinalIgnoreCase)
+            || executor == null
+            || string.IsNullOrWhiteSpace(executor.ShutdownSequenceName);
 
         if (!immediate && executor.RunByName(executor.ShutdownSequenceName))
             return $"Shutdown sequence '{executor.ShutdownSequenceName}' started.";
@@ -136,38 +141,40 @@ public sealed partial class EssentialsModule
 
     [Command("listauto", "List configured and running auto commands.")]
     [Permission(MyPromoteLevel.Admin)]
-    public IEnumerable<string> ListAuto()
-        => Plugin.Instance?.AutoCommands?.Describe() ?? new[] { "Auto commands are not available." };
+    public IEnumerable<string> ListAuto() =>
+        Plugin.Instance?.AutoCommands?.Describe() ?? new[] { "Auto commands are not available." };
 
     [Command("vote yes", "Vote yes on the current vote.")]
     [Permission(MyPromoteLevel.None)]
-    public string VoteYes()
-        => Plugin.Instance?.AutoCommands?.CastVote(Context.Caller.IdentityId, true) ?? "Voting is not available.";
+    public string VoteYes() =>
+        Plugin.Instance?.AutoCommands?.CastVote(Context.Caller.IdentityId, true)
+        ?? "Voting is not available.";
 
     [Command("vote no", "Vote no on the current vote.")]
     [Permission(MyPromoteLevel.None)]
-    public string VoteNo()
-        => Plugin.Instance?.AutoCommands?.CastVote(Context.Caller.IdentityId, false) ?? "Voting is not available.";
+    public string VoteNo() =>
+        Plugin.Instance?.AutoCommands?.CastVote(Context.Caller.IdentityId, false)
+        ?? "Voting is not available.";
 
     [Command("vote list", "List the configured vote commands.")]
     [Permission(MyPromoteLevel.None)]
-    public IEnumerable<string> VoteList()
-        => Plugin.Instance?.AutoCommands?.DescribeVotes() ?? new[] { "Voting is not available." };
+    public IEnumerable<string> VoteList() =>
+        Plugin.Instance?.AutoCommands?.DescribeVotes() ?? new[] { "Voting is not available." };
 
     [Command("vote cancel", "Cancel the current vote.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string VoteCancel()
-        => Plugin.Instance?.AutoCommands?.CancelVote() ?? "Voting is not available.";
+    public string VoteCancel() =>
+        Plugin.Instance?.AutoCommands?.CancelVote() ?? "Voting is not available.";
 
     [Command("vote debug", "Show vote state for admins.")]
     [Permission(MyPromoteLevel.Admin)]
-    public IEnumerable<string> VoteDebug()
-        => Plugin.Instance?.AutoCommands?.DescribeVoteDebug() ?? new[] { "Voting is not available." };
+    public IEnumerable<string> VoteDebug() =>
+        Plugin.Instance?.AutoCommands?.DescribeVoteDebug() ?? new[] { "Voting is not available." };
 
     [Command("vote reset", "Reset current and previous vote state.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string VoteReset()
-        => Plugin.Instance?.AutoCommands?.ResetVoteState() ?? "Voting is not available.";
+    public string VoteReset() =>
+        Plugin.Instance?.AutoCommands?.ResetVoteState() ?? "Voting is not available.";
 
     [Command("vote", "Start a vote for a configured vote command.")]
     [Permission(MyPromoteLevel.None)]
