@@ -102,6 +102,7 @@ public class Plugin : IPlugin, ICommonPlugin
         {
             ServerControl.Terminating -= OnTerminating;
             ShipFixer.ShipFixerCluster.Dispose();
+            ClusterCommands.Dispose();
             // IMPORTANT: Do NOT call harmony.UnpatchAll() here! It may break other plugins.
         }
         catch (Exception ex)
@@ -147,5 +148,6 @@ public class Plugin : IPlugin, ICommonPlugin
         AutoCommands?.Update();
         cleanupLookNotifications?.Update();
         ShipFixer.ShipFixerCluster.Update(Tick);
+        ClusterCommands.Update(Tick);
     }
 }

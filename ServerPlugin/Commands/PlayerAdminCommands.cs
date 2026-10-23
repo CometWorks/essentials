@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using PluginSdk;
+using PluginSdk.Clustering;
 using PluginSdk.Commands;
 using Sandbox.Engine.Multiplayer;
 using Sandbox.Game;
@@ -201,38 +202,33 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        if (Utilities.GetPlayerByNameOrId(player) is not MyPlayer target || target.Id.SteamId == 0)
-        {
-            Context.Respond($"Could not find online player {player}.");
-            return;
-        }
-
         string senderName = string.IsNullOrWhiteSpace(Context.Caller.Name)
             ? Utilities.GetPlayerNameById(Context.Caller.IdentityId)
             : Context.Caller.Name;
-        string targetName = target.DisplayName;
-        long targetIdentityId = target.Identity?.IdentityId ?? 0;
-        if (targetIdentityId == 0)
+        // On a cluster the recipient may be on any node: the node it is connected to shows it
+        if (
+            Utilities.FindClusterPlayer(player) is PluginPlayerInfo online
+            && online.IdentityId != 0
+        )
         {
-            Context.Respond($"Could not find online player {player}.");
+            ClusterCommands.SendMessage(online.IdentityId, senderName, message);
+            ClusterCommands.Show(message, "PM to " + online.Name, Context.Caller.IdentityId);
             return;
         }
 
-        MyVisualScriptLogicProvider.SendChatMessageColored(
-            message,
-            Color.MediumPurple,
-            "PM from " + senderName,
-            targetIdentityId,
-            MyFontEnum.White
-        );
+        if (
+            Utilities.GetPlayerByNameOrId(player) is MyPlayer target
+            && target.Id.SteamId != 0
+            && target.Identity?.IdentityId is long targetIdentityId
+            && targetIdentityId != 0
+        )
+        {
+            ClusterCommands.Show(message, "PM from " + senderName, targetIdentityId);
+            ClusterCommands.Show(message, "PM to " + target.DisplayName, Context.Caller.IdentityId);
+            return;
+        }
 
-        MyVisualScriptLogicProvider.SendChatMessageColored(
-            message,
-            Color.MediumPurple,
-            "PM to " + targetName,
-            Context.Caller.IdentityId,
-            MyFontEnum.White
-        );
+        Context.Respond($"Could not find online player {player}.");
     }
 
     private static string BuildMotdBody()

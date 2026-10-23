@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using PluginSdk.Clustering;
@@ -19,13 +18,11 @@ namespace ServerPlugin.ShipFixer;
 // this runs: every grid is local.
 internal static class ShipFixerCluster
 {
-    private const string PluginId = "DF09925B-6D53-41F2-899C-CA6214B5DD6F";
     private const string FindTopic = "fixship-find";
     private const string FixTopic = "fixship-fix";
     private const string CooldownTopic = "fixship-cooldown";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    private static PluginClusterClient client;
     private static readonly List<IDisposable> Handlers = new List<IDisposable>();
     private static int nextRegistrationTick;
 
@@ -63,23 +60,7 @@ internal static class ShipFixerCluster
         Handlers.Clear();
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private static PluginClusterClient Client()
-    {
-        if (client != null)
-            return client;
-
-        try
-        {
-            client = PluginCluster.ForPlugin(PluginId);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
-        {
-            // Loaded under another id (a dev folder with its own manifest id): no cluster views
-        }
-
-        return client;
-    }
+    private static PluginClusterClient Client() => EssentialsCluster.Client();
 
     /// <summary>Game thread: OK when this node may cut and paste every grid, else why not.</summary>
     public static ShipFixerResult CheckResidence(IEnumerable<MyCubeGrid> grids)

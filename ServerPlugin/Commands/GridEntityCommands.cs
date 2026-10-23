@@ -128,32 +128,71 @@ public sealed partial class EssentialsModule
 
     [Command("grids list", "List grids owned by the caller.")]
     [Permission(MyPromoteLevel.None)]
-    public string GridsList()
+    public void GridsList()
     {
         if (Context.Caller.IsConsole || Context.Caller.IdentityId == 0)
-            return "Console cannot list player-owned grids.";
+        {
+            Context.Respond("Console cannot list player-owned grids.");
+            return;
+        }
 
         long identityId = Context.Caller.IdentityId;
-        List<MyCubeGrid> grids = MyEntities
+
+        // On a cluster the grids may be on any node: each node lists the ones it owns
+        if (EssentialsCluster.Client() != null)
+        {
+            CommandContext context = Context;
+            ClusterCommands.ListGrids(
+                identityId,
+                grids =>
+                    context.Respond(
+                        grids == null
+                            ? "The other servers of the cluster did not answer. Try again."
+                            : FormatGrids(identityId, grids)
+                    )
+            );
+            return;
+        }
+
+        Context.Respond(
+            FormatGrids(
+                identityId,
+                OwnedGrids(identityId)
+                    .Select(grid => new ClusterCommands.GridLine
+                    {
+                        Id = grid.EntityId,
+                        Name = grid.DisplayName,
+                        Size = grid.GridSizeEnum.ToString(),
+                        Blocks = grid.BlocksCount,
+                        Position = grid.PositionComp.GetPosition(),
+                    })
+                    .ToList()
+            )
+        );
+    }
+
+    /// <summary>The active real grids of this process that the player owns.</summary>
+    internal static IEnumerable<MyCubeGrid> OwnedGrids(long identityId) =>
+        MyEntities
             .GetEntities()
             .OfType<MyCubeGrid>()
-            .Where(grid => IsActiveRealGrid(grid) && grid.BigOwners.Contains(identityId))
-            .OrderBy(grid => grid.DisplayName)
-            .ToList();
+            .Where(grid => IsActiveRealGrid(grid) && grid.BigOwners.Contains(identityId));
 
+    private static string FormatGrids(long identityId, List<ClusterCommands.GridLine> grids)
+    {
         if (grids.Count == 0)
             return "You own no grids.";
 
         StringBuilder sb = new StringBuilder();
         sb.AppendLine($"Ships/stations owned by {Utilities.GetPlayerNameById(identityId)}:");
-        foreach (MyCubeGrid grid in grids)
+        foreach (ClusterCommands.GridLine grid in grids.OrderBy(grid => grid.Name))
         {
             string position =
                 Plugin.Instance?.Config?.UtilityShowPosition == true
-                    ? grid.PositionComp.GetPosition().ToString()
+                    ? grid.Position.ToString()
                     : "Unknown";
             sb.AppendLine(
-                $"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s) - Position {position}"
+                $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s) - Position {position}"
             );
             AddGridGps(identityId, grid);
         }
@@ -425,15 +464,15 @@ public sealed partial class EssentialsModule
             ? entity?.EntityId.ToString(CultureInfo.InvariantCulture) ?? "<null>"
             : entity.DisplayName;
 
-    private static void AddGridGps(long identityId, MyCubeGrid grid)
+    private static void AddGridGps(long identityId, ClusterCommands.GridLine grid)
     {
         if (Plugin.Instance?.Config?.MarkerShowPosition != true)
             return;
 
         var gps = MyAPIGateway.Session?.GPS.Create(
-            grid.DisplayName,
-            $"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s)",
-            grid.PositionComp.GetPosition(),
+            grid.Name,
+            $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s)",
+            grid.Position,
             true
         );
 

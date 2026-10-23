@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using PluginSdk.Clustering;
 using PluginSdk.Commands;
 using Sandbox.Engine.Multiplayer;
 using Sandbox.Game.World;
@@ -41,6 +42,10 @@ public sealed partial class EssentialsModule
     [Permission(MyPromoteLevel.None)]
     public string ListIds()
     {
+        // A cluster node has only its own players; the cluster's view has everyone's
+        if (EssentialsCluster.OnlinePlayers() is IReadOnlyList<PluginPlayerInfo> cluster)
+            return ListClusterIds(cluster);
+
         List<MyPlayer> players = Utilities
             .GetOnlinePlayers()
             .OrderBy(player => player.DisplayName)
@@ -55,6 +60,29 @@ public sealed partial class EssentialsModule
             string steamName = GetSteamMemberName(player.Id.SteamId);
             string identityName = player.Identity?.DisplayName ?? player.DisplayName;
             sb.AppendLine($"Names: {steamName} : {identityName} | ID: {player.Id.SteamId}");
+        }
+
+        return sb.ToString();
+    }
+
+    private static string ListClusterIds(IReadOnlyList<PluginPlayerInfo> online)
+    {
+        List<PluginPlayerInfo> players = online
+            .Where(player => player.SteamId != 0 && !string.IsNullOrEmpty(player.Name))
+            .OrderBy(player => player.Name)
+            .ToList();
+
+        if (players.Count == 0)
+            return "No players online.";
+
+        StringBuilder sb = new StringBuilder();
+        foreach (PluginPlayerInfo player in players)
+        {
+            // A player on another node is no member of this one: its Steam name is unknown here
+            string steamName = MyMultiplayer.Static?.GetMemberName(player.SteamId);
+            if (string.IsNullOrWhiteSpace(steamName))
+                steamName = player.Name;
+            sb.AppendLine($"Names: {steamName} : {player.Name} | ID: {player.SteamId}");
         }
 
         return sb.ToString();
