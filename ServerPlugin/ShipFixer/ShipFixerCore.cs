@@ -50,6 +50,10 @@ public sealed class ShipFixerCore
         if (groups == null || groups.Count == 0)
             return ShipFixerResult.GridNotFound;
 
+        ShipFixerResult residence = ShipFixerCluster.CheckResidence(groups);
+        if (residence != ShipFixerResult.OK)
+            return residence;
+
         if (playerId != 0)
         {
             MyCubeGrid referenceGrid = null;
@@ -235,7 +239,7 @@ public sealed class ShipFixerCore
             foreach (MyGroups<MyCubeGrid, MyGridPhysicalGroupData>.Node node in group.Nodes)
             {
                 MyCubeGrid grid = node.NodeData;
-                if (grid == null || grid.Physics == null)
+                if (grid == null || grid.Physics == null || ShipFixerCluster.IsCopy(grid))
                     continue;
 
                 if (id != 0)
@@ -290,7 +294,43 @@ public sealed class ShipFixerCore
             && playerFaction.FactionId == ownerFaction.FactionId;
     }
 
-    private ShipFixerResult FixGroups(List<MyCubeGrid> groups, long playerId)
+    /// <summary>Cluster request on this node: may the named grid (or the one with the id) be fixed here</summary>
+    internal static ShipFixerCluster.Answer FindHere(long playerId, string gridName, long gridId)
+    {
+        List<MyCubeGrid> groups = FindGridGroupsForPlayer(
+            gridName,
+            playerId,
+            out ShipFixerResult result,
+            gridId
+        );
+        if (groups.Count == 0)
+            return new ShipFixerCluster.Answer { Result = result };
+
+        return new ShipFixerCluster.Answer
+        {
+            Result = CheckGroups(groups, out _, playerId, ejectPlayers: false),
+            GridId = groups[0].EntityId,
+            GridName = groups[0].DisplayName,
+        };
+    }
+
+    /// <summary>Cluster request on this node: fix the grid with the id if this node has it</summary>
+    internal static ShipFixerCluster.Answer FixHere(long playerId, string gridName, long gridId)
+    {
+        List<MyCubeGrid> groups = FindGridGroupsForPlayer(gridName, playerId, out _, gridId);
+        if (groups.Count == 0)
+            return new ShipFixerCluster.Answer { Result = ShipFixerResult.GridNotFound };
+
+        string name = groups[0].DisplayName;
+        return new ShipFixerCluster.Answer
+        {
+            Result = FixGroups(groups, playerId),
+            GridId = gridId,
+            GridName = name,
+        };
+    }
+
+    private static ShipFixerResult FixGroups(List<MyCubeGrid> groups, long playerId)
     {
         if (groups.Count == 0)
             return ShipFixerResult.GridNotFound;
@@ -309,7 +349,7 @@ public sealed class ShipFixerCore
         return FixGroup(group, executingPlayer);
     }
 
-    private ShipFixerResult FixGroup(List<MyCubeGrid> grids, MyIdentity executingPlayer)
+    private static ShipFixerResult FixGroup(List<MyCubeGrid> grids, MyIdentity executingPlayer)
     {
         string playerName = executingPlayer?.DisplayName ?? "Server";
         List<MyObjectBuilder_EntityBase> objectBuilders = new List<MyObjectBuilder_EntityBase>();
