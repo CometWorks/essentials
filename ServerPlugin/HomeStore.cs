@@ -8,6 +8,9 @@ using VRageMath;
 
 namespace ServerPlugin;
 
+// Homes by Steam id. A plain server keeps them all in one file of its own. On a cluster a
+// player's homes go wherever the player goes: one file per player in the cluster's shared
+// storage, read on every use. A player is on one node at a time, so each file has one writer.
 internal static class HomeStore
 {
     private static readonly object Sync = new object();
@@ -15,6 +18,12 @@ internal static class HomeStore
 
     private static string Path =>
         System.IO.Path.Combine(MyFileSystem.UserDataPath, "Essentials.Homes.xml");
+
+    // Null on a plain server
+    private static string SharedDirectory =>
+        EssentialsCluster.SharedDirectory() is string shared
+            ? System.IO.Path.Combine(shared, "homes")
+            : null;
 
     public static bool TryAdd(
         ulong steamId,
@@ -57,7 +66,7 @@ internal static class HomeStore
                 }
             );
 
-            Save();
+            Save(player);
             return true;
         }
     }
@@ -78,7 +87,7 @@ internal static class HomeStore
                 return false;
 
             player.Homes.Remove(home);
-            Save();
+            Save(player);
             return true;
         }
     }
@@ -113,20 +122,47 @@ internal static class HomeStore
 
     private static HomePlayerRecord GetOrCreatePlayer(ulong steamId)
     {
-        EnsureLoaded();
         HomePlayerRecord player = FindPlayer(steamId);
         if (player != null)
             return player;
 
         player = new HomePlayerRecord { SteamId = steamId };
-        data.Players.Add(player);
+        if (SharedDirectory == null)
+            data.Players.Add(player);
         return player;
     }
 
     private static HomePlayerRecord FindPlayer(ulong steamId)
     {
+        if (SharedDirectory is string shared)
+            return LoadShared(shared, steamId);
+
         EnsureLoaded();
         return data.Players.FirstOrDefault(player => player.SteamId == steamId);
+    }
+
+    private static string SharedPath(string shared, ulong steamId) =>
+        System.IO.Path.Combine(shared, steamId + ".xml");
+
+    private static HomePlayerRecord LoadShared(string shared, ulong steamId)
+    {
+        string path = SharedPath(shared, steamId);
+        try
+        {
+            if (!File.Exists(path))
+                return null;
+
+            XmlSerializer serializer = new XmlSerializer(typeof(HomePlayerRecord));
+            using Stream stream = File.OpenRead(path);
+            HomePlayerRecord player = (HomePlayerRecord)serializer.Deserialize(stream);
+            player.Homes ??= new List<HomeLocation>();
+            return player;
+        }
+        catch (Exception ex)
+        {
+            Plugin.Instance?.Log.Warning(ex, "Failed to load homes: {0}", path);
+            return null;
+        }
     }
 
     private static void EnsureLoaded()
@@ -153,6 +189,41 @@ internal static class HomeStore
         }
 
         data = new HomeStoreData();
+    }
+
+    private static void Save(HomePlayerRecord player)
+    {
+        if (SharedDirectory is string shared)
+            SaveShared(shared, player);
+        else
+            Save();
+    }
+
+    // Written under a temporary name and renamed into place: a node reading it never sees half a file
+    private static void SaveShared(string shared, HomePlayerRecord player)
+    {
+        string path = SharedPath(shared, player.SteamId);
+        string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            Directory.CreateDirectory(shared);
+            XmlSerializer serializer = new XmlSerializer(typeof(HomePlayerRecord));
+            using (Stream stream = File.Create(temporary))
+                serializer.Serialize(stream, player);
+            if (File.Exists(path))
+                File.Replace(temporary, path, null);
+            else
+                File.Move(temporary, path);
+        }
+        catch (Exception ex)
+        {
+            Plugin.Instance?.Log.Warning(ex, "Failed to save homes: {0}", path);
+            try
+            {
+                File.Delete(temporary);
+            }
+            catch (IOException) { }
+        }
     }
 
     private static void Save()
@@ -182,6 +253,7 @@ public sealed class HomeStoreData
     public List<HomePlayerRecord> Players { get; set; } = new List<HomePlayerRecord>();
 }
 
+[XmlRoot("Player")]
 public sealed class HomePlayerRecord
 {
     [XmlAttribute]

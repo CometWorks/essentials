@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PluginSdk.Clustering;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
@@ -88,6 +89,24 @@ public static class Utilities
             return player;
 
         return null;
+    }
+
+    /// <summary>
+    /// A player online anywhere in a cluster, by name, identity id or Steam id; null on a plain
+    /// server. A player on another node has an identity on this one but no player.
+    /// </summary>
+    public static PluginPlayerInfo FindClusterPlayer(string nameOrId)
+    {
+        if (string.IsNullOrWhiteSpace(nameOrId))
+            return null;
+
+        return EssentialsCluster
+            .OnlinePlayers()
+            ?.FirstOrDefault(player =>
+                string.Equals(player.Name, nameOrId, StringComparison.InvariantCultureIgnoreCase)
+                || player.IdentityId.ToString() == nameOrId
+                || player.SteamId.ToString() == nameOrId
+            );
     }
 
     public static MyPlayer GetPlayerByIdentityId(long identityId)

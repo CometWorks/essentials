@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using PluginSdk.Clustering;
 using PluginSdk.Commands;
 using Sandbox.Game.GameSystems.BankingAndCurrency;
 using Sandbox.Game.World;
@@ -136,12 +137,23 @@ public sealed partial class EssentialsModule
         if (Context.Caller.IsConsole || Context.Caller.IdentityId == 0)
             return "Console cannot execute this command";
 
-        IMyPlayer target = Utilities.GetPlayerByNameOrId(player);
-        if (target == null)
+        long toIdentityId;
+        string targetName;
+        if (Utilities.GetPlayerByNameOrId(player) is IMyPlayer target)
+        {
+            toIdentityId = target.Identity.IdentityId;
+            targetName = target.DisplayName;
+        }
+        // On a cluster the recipient may be online on another node; the bank is cluster-wide
+        else if (Utilities.FindClusterPlayer(player) is PluginPlayerInfo remote)
+        {
+            toIdentityId = remote.IdentityId;
+            targetName = remote.Name;
+        }
+        else
             return "Player is not online or cannot be found!";
 
         long fromIdentityId = Context.Caller.IdentityId;
-        long toIdentityId = target.Identity.IdentityId;
 
         if (fromIdentityId == toIdentityId)
             return "You cannot pay yourself!";
@@ -149,7 +161,7 @@ public sealed partial class EssentialsModule
         if (!TryTransferCredits(fromIdentityId, toIdentityId, amount, out string error))
             return error;
 
-        return $"Sent {amount:#,##0} credits to {target.DisplayName}.";
+        return $"Sent {amount:#,##0} credits to {targetName}.";
     }
 
     [Command("eco", "List economy alias commands.")]

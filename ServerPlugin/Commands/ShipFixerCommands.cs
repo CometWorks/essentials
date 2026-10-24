@@ -19,6 +19,12 @@ internal static class ShipFixerCommands
         new Dictionary<string, DateTime>();
     private static readonly ShipFixerCore ShipFixerCoreInstance = new ShipFixerCore();
 
+    // Confirmations of grids found on another cluster node: the id the node answered with
+    private static readonly Dictionary<
+        string,
+        (DateTime ExpiresAt, long GridId)
+    > RemoteConfirmations = new Dictionary<string, (DateTime, long)>();
+
     public static void FixShipPlayer(CommandContext context, string gridName = null)
     {
         if (!Plugin.Instance.Config.ShipFixerPlayerCommandEnabled)
@@ -65,6 +71,11 @@ internal static class ShipFixerCommands
 
             character = myCharacter;
             gridName = "nogrid";
+        }
+        else if (OnAnotherNode(playerId, gridName, 0))
+        {
+            FixRemote(context, ShipFixerPlayerKey(context), playerId, gridName, 0, true);
+            return;
         }
 
         if (
@@ -148,6 +159,12 @@ internal static class ShipFixerCommands
             return;
         }
 
+        if (OnAnotherNode(0, "nogrid", gridId))
+        {
+            FixRemote(context, ShipFixerPlayerKey(context), 0, "nogrid", gridId, false);
+            return;
+        }
+
         if (!CheckConfirmation(context, ShipFixerPlayerKey(context), 0, "nogrid", null, gridId))
             return;
 
@@ -164,6 +181,12 @@ internal static class ShipFixerCommands
 
     private static void FixShipModeratorByName(CommandContext context, string gridName)
     {
+        if (OnAnotherNode(0, gridName, 0))
+        {
+            FixRemote(context, ShipFixerPlayerKey(context), 0, gridName, 0, false);
+            return;
+        }
+
         if (!CheckConfirmation(context, ShipFixerPlayerKey(context), 0, gridName, null, 0))
             return;
 
@@ -176,6 +199,91 @@ internal static class ShipFixerCommands
             Plugin.Instance.Log.Error(ex, "Error on fixing ship");
             context.Respond("Error on fixing ship.");
         }
+    }
+
+    // On a cluster a grid asked for by name or id that this node doesn't own may be on another node
+    private static bool OnAnotherNode(long playerId, string gridName, long gridId) =>
+        ShipFixerCluster.Routes
+        && ShipFixerCore.FindGridGroupsForPlayer(gridName, playerId, out _, gridId).Count == 0;
+
+    // The confirmation and the fix of a grid on another node: every node is asked, the one
+    // holding the grid answers, and the fix goes to that grid's id, so it acts only there
+    private static void FixRemote(
+        CommandContext context,
+        string callerKey,
+        long playerId,
+        string gridName,
+        long gridId,
+        bool playerCommand
+    )
+    {
+        string confirmationKey = $"{callerKey}:{gridName}:{gridId}:{playerId}";
+        DateTime now = DateTime.UtcNow;
+        if (
+            RemoteConfirmations.TryGetValue(
+                confirmationKey,
+                out (DateTime ExpiresAt, long GridId) pending
+            )
+            && pending.ExpiresAt >= now
+        )
+        {
+            RemoteConfirmations.Remove(confirmationKey);
+            ShipFixerCluster.Request(
+                true,
+                playerId,
+                gridName,
+                pending.GridId,
+                answer =>
+                {
+                    if (!RespondRemote(context, answer))
+                        return;
+
+                    if (playerCommand && answer.Result == ShipFixerResult.ShipFixed)
+                    {
+                        StartCommandCooldown(callerKey);
+                        ShipFixerCluster.StartCooldownEverywhere(callerKey);
+                    }
+                }
+            );
+            return;
+        }
+
+        ShipFixerCluster.Request(
+            false,
+            playerId,
+            gridName,
+            gridId,
+            answer =>
+            {
+                if (answer?.Result != ShipFixerResult.OK)
+                {
+                    RespondRemote(context, answer);
+                    return;
+                }
+
+                RemoteConfirmations[confirmationKey] = (
+                    DateTime.UtcNow.AddSeconds(
+                        Plugin.Instance.Config.ShipFixerConfirmationInSeconds
+                    ),
+                    answer.GridId
+                );
+                context.Respond(
+                    $"Are you sure you want to continue? Enter the command again within {Plugin.Instance.Config.ShipFixerConfirmationInSeconds} seconds to confirm fixship on {answer.GridName}."
+                );
+            }
+        );
+    }
+
+    private static bool RespondRemote(CommandContext context, ShipFixerCluster.Answer answer)
+    {
+        if (answer == null)
+        {
+            context.Respond("The other servers of the cluster did not answer. Try again.");
+            return false;
+        }
+
+        WriteResponse(context, answer.Result);
+        return true;
     }
 
     private static bool CheckConfirmation(
@@ -251,7 +359,7 @@ internal static class ShipFixerCommands
         return false;
     }
 
-    private static void StartCommandCooldown(string callerKey) =>
+    internal static void StartCommandCooldown(string callerKey) =>
         CommandCooldowns[callerKey] = DateTime.UtcNow.AddSeconds(
             Plugin.Instance.Config.ShipFixerCooldownInSeconds
         );
@@ -298,6 +406,11 @@ internal static class ShipFixerCommands
                 break;
             case ShipFixerResult.GridNotFound:
                 context.Respond("Grid not found");
+                break;
+            case ShipFixerResult.GridMoving:
+                context.Respond(
+                    "The grid is moving between servers right now. Try again in a few seconds."
+                );
                 break;
         }
     }

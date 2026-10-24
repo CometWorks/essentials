@@ -306,6 +306,13 @@ confirmation window, projector handling, ejecting players) is governed by the
 **Ship Fixer** config tab; the player `!ess fixship` command (and `!fixship`)
 can be disabled there. Each command also has the short form without `!ess`.
 
+On a Magnetar cluster a node cuts and pastes only grids it owns and simulates. A
+grid named (or given by id) that is on another node is found there: every node is
+asked, the one holding the grid answers the confirmation and does the fix, and the
+cooldown applies on every node. A grid that is moving between nodes at that moment
+is refused with "The grid is moving between servers right now. Try again in a few
+seconds."
+
 | Command                      | Permission | Description                                               |
 | ---------------------------- | ---------- | --------------------------------------------------------- |
 | `!ess fixship [gridName]`    | None       | Fix the grid you are looking at, or one by name.          |

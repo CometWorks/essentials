@@ -12,4 +12,5 @@ public enum ShipFixerResult
     ShipFixed,
     GridNotFound,
     PlayersWereEjected,
+    GridMoving,
 }
