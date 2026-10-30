@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using PluginSdk.Clustering;
 using PluginSdk.Commands;
@@ -382,6 +383,12 @@ public sealed partial class EssentialsModule
         MyBankingSystem.ChangeBalance(identityId, amount);
     }
 
+    private static readonly MethodInfo TransferServer =
+        typeof(MyBankingSystem).GetMethod(
+            "Transfer_Server",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        ) ?? throw new MissingMethodException(nameof(MyBankingSystem), "Transfer_Server");
+
     private static bool TryTransferCredits(
         long fromIdentityId,
         long toIdentityId,
@@ -410,14 +417,18 @@ public sealed partial class EssentialsModule
             return false;
         }
 
-        long finalToBalance = toBalance + amount;
-        MyBankingSystem.RequestTransfer_BroadcastToClients(
-            fromIdentityId,
-            toIdentityId,
-            amount,
-            finalFromBalance,
-            finalToBalance
+        // RequestTransfer_BroadcastToClients is the network event: called directly it stays on
+        // the server, and a client left with its old balance disconnects on the next debit.
+        TransferServer.Invoke(
+            MyBankingSystem.Static,
+            new object[] { fromIdentityId, toIdentityId, amount }
         );
+        if (MyBankingSystem.GetBalance(fromIdentityId) != finalFromBalance)
+        {
+            error = "The transfer was refused.";
+            return false;
+        }
+
         error = null;
         return true;
     }

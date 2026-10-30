@@ -769,9 +769,8 @@ public sealed class ProbeCommands : CommandModule
     [Permission(MyPromoteLevel.Admin)]
     public string SetBalance(long ownerId, long amount)
     {
-        // A new account reaches the clients with its balance, not a change to it.
-        // Their copy may be stale (SE1-0258), and a change taking more than that
-        // copy holds disconnects them.
+        // A new account reaches the clients with its balance, not a change to it, so
+        // the tests can set any balance without it being a debit.
         MyBankingSystem.Static.RemoveAccount(ownerId);
         MyBankingSystem.Static.CreateAccount(ownerId, amount);
         return Ok(
@@ -779,6 +778,14 @@ public sealed class ProbeCommands : CommandModule
             MyBankingSystem.GetBalance(ownerId).ToString(CultureInfo.InvariantCulture)
         );
     }
+
+    [Command(
+        "changebalance",
+        "Changes a bank balance the way the game does, in a broadcast delta."
+    )]
+    [Permission(MyPromoteLevel.Admin)]
+    public string ChangeBalance(long ownerId, long amount) =>
+        Ok("changebalance", MyBankingSystem.ChangeBalance(ownerId, amount).ToString());
 
     // --- voxels ---------------------------------------------------------------------
 

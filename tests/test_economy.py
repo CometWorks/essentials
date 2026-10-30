@@ -6,6 +6,7 @@ server through the probe."""
 from __future__ import annotations
 
 import re
+import time
 
 import pytest
 
@@ -100,6 +101,16 @@ def test_econ_check_and_top(game):
 def test_econ_pay(game):
     assert game.b.ess("econ pay Alpha 750") == "Sent 750 credits to Alpha."
     assert (game.balance(A), game.balance(B)) == (5750, 1250)
+
+
+def test_econ_pay_reaches_clients(game):
+    """A client that missed the payment still holds 5,000 for A. It drops the connection
+    on a debit bigger than that, and takes the next command with it."""
+    assert game.b.ess("econ pay Alpha 750") == "Sent 750 credits to Alpha."
+    assert game.a.probe("changebalance", A, -5500) == "Probe changebalance: True"
+    time.sleep(3)
+    assert game.a.ess("econ check Alpha") == "Alpha's balance is 250 credits"
+    assert game.b.ess("econ check Bravo") == "Bravo's balance is 1,250 credits"
 
 
 def test_econ_pay_refusals(game):
