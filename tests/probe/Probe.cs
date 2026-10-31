@@ -748,6 +748,20 @@ public sealed class ProbeCommands : CommandModule
         );
     }
 
+    [Command("gpspos", "The positions of a player's GPS entries with this name.")]
+    [Permission(MyPromoteLevel.Admin)]
+    public string GpsPos(long identityId, string name) =>
+        Ok(
+            "gpspos",
+            string.Join(
+                " ",
+                MyAPIGateway
+                    .Session.GPS.GetGpsList(identityId)
+                    .Where(g => g.Name == name)
+                    .Select(g => V(g.Coords))
+            )
+        );
+
     [Command("addgps", "Adds a GPS entry to a player.")]
     [Permission(MyPromoteLevel.Admin)]
     public string AddGps(long identityId, string name, double x, double y, double z)

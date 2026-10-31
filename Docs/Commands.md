@@ -219,6 +219,15 @@ looking at where supported. For `protect`, `-allowDamage` leaves block damage
 enabled and `-allowEdit` leaves building/removal enabled; using both is equivalent
 to `unprotect`.
 
+`!ess grids list` is open to every player. The options "Show positions in owned-grid
+list output" and "Show GPS markers for owned-grid list output" (General tab, both off by
+default) add each grid's position to the reply and give the caller a GPS marker at each
+grid, so a lost ship can be found. Listing again moves the markers of grids that have
+moved and removes those of grids that are gone. `!ess ez delete <name|all>` removes them
+by hand. On a Magnetar cluster every node lists the caller's grids it holds, and the
+markers follow the player between nodes. A grid moving between nodes at that moment can
+be missing from the list; list again a few seconds later.
+
 | Command                                     | Permission  | Description                                                                                                |
 | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
 | `!ess entities find <name>`                 | SpaceMaster | Find entities by display name or voxel storage name.                                                       |
@@ -229,7 +238,7 @@ to `unprotect`.
 | `!ess entities poweroff <gridName>`         | SpaceMaster | Disable reactors, batteries, solar panels and hydrogen engines on a grid.                                  |
 | `!ess entities poweron <gridName>`          | SpaceMaster | Enable reactors, batteries, solar panels and hydrogen engines on a grid.                                   |
 | `!ess entities eject <playerName\|all>`     | Admin       | Eject one seated player, or every seated player with `all`.                                                |
-| `!ess grids list`                           | None        | List grids owned by the caller; position/GPS output follows config.                                        |
+| `!ess grids list`                           | None        | List grids owned by the caller; see below for positions and GPS markers.                                   |
 | `!ess grids export <gridName> <fileName>`   | SpaceMaster | Export a grid XML file under `Essentials/ExportedGrids`.                                                   |
 | `!ess grids import <fileName> [targetName]` | SpaceMaster | Import a grid XML file near the caller or target entity.                                                   |
 | `!ess grids ejectall [gridName]`            | SpaceMaster | Eject all pilots from a named or targeted mechanical grid group.                                           |

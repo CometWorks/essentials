@@ -180,6 +180,8 @@ public sealed partial class EssentialsModule
 
     private static string FormatGrids(long identityId, List<ClusterCommands.GridLine> grids)
     {
+        UpdateGridGps(identityId, grids);
+
         if (grids.Count == 0)
             return "You own no grids.";
 
@@ -194,7 +196,6 @@ public sealed partial class EssentialsModule
             sb.AppendLine(
                 $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s) - Position {position}"
             );
-            AddGridGps(identityId, grid);
         }
 
         return sb.ToString();
@@ -464,19 +465,33 @@ public sealed partial class EssentialsModule
             ? entity?.EntityId.ToString(CultureInfo.InvariantCulture) ?? "<null>"
             : entity.DisplayName;
 
-    private static void AddGridGps(long identityId, ClusterCommands.GridLine grid)
+    private static void UpdateGridGps(long identityId, List<ClusterCommands.GridLine> grids)
     {
-        if (Plugin.Instance?.Config?.MarkerShowPosition != true)
+        if (
+            Plugin.Instance?.Config?.MarkerShowPosition != true
+            || MyAPIGateway.Session?.GPS is not IMyGpsCollection gpsCollection
+        )
             return;
 
-        var gps = MyAPIGateway.Session?.GPS.Create(
-            grid.Name,
-            $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s)",
-            grid.Position,
-            true
-        );
+        // A marker of an earlier list is stale once its grid has moved or is gone
+        foreach (IMyGps marker in gpsCollection.GetGpsList(identityId).Where(IsGridMarker).ToList())
+            if (!grids.Any(grid => grid.Name == marker.Name && grid.Position == marker.Coords))
+                gpsCollection.RemoveGps(identityId, marker);
 
-        if (gps != null)
-            MyAPIGateway.Session?.GPS.AddGps(identityId, gps);
+        foreach (ClusterCommands.GridLine grid in grids)
+            gpsCollection.AddGps(
+                identityId,
+                gpsCollection.Create(
+                    grid.Name,
+                    $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s)",
+                    grid.Position,
+                    true
+                )
+            );
     }
+
+    private static bool IsGridMarker(IMyGps gps) =>
+        gps.Description != null
+        && gps.Description.StartsWith(gps.Name + " - ", StringComparison.Ordinal)
+        && gps.Description.EndsWith(" block(s)", StringComparison.Ordinal);
 }
