@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import subprocess
 import sys
 import time
@@ -49,7 +50,7 @@ def build() -> None:
     out = PLUGINS / ".build"
     subprocess.run(
         ["nice", "dotnet", "build", str(REPO / "ServerPlugin/ServerPlugin.csproj"), "-c", "Release",
-         "--nologo", "-v", "q", f"-p:Magnetar={bench_module.os.environ['MAGNETAR_HOME']}", "-o", str(out)],
+         "--nologo", "-v", "q", f"-p:Magnetar={os.environ['MAGNETAR_HOME']}", "-o", str(out)],
         check=True,
     )  # fmt: skip
     folder = PLUGINS / "Essentials"
@@ -216,7 +217,7 @@ run.regular_nodes = 2
 def main() -> int:
     ROOT.mkdir(parents=True, exist_ok=True)
     build()
-    bench_module.os.environ["CLUSTER_EXTRA_PLUGINS"] = str(PLUGINS / "Essentials")
+    os.environ["CLUSTER_EXTRA_PLUGINS"] = str(PLUGINS / "Essentials")
     label = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ-essentials-grids")
     results = bench_module.HOST.results / label
     results.mkdir(parents=True, exist_ok=True)
