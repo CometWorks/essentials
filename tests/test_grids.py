@@ -16,7 +16,7 @@ import prefabs
 import rig
 import world
 from conftest import confirm, wait_until
-from session import FRONT, distance, offset, parse
+from session import FRONT, distance, offset, parse, vector
 
 
 def look_at_grid(player, g: prefabs.Grid, stand=None) -> None:
@@ -222,6 +222,65 @@ def test_grids_list_positions_and_gps(game):
         10,
         "the GPS entry",
     )
+
+
+def gps(game, identity) -> str:
+    return game.a.probe("gps", identity).removeprefix("Probe gps:").strip()
+
+
+def gps_positions(game, name) -> list:
+    reply = game.a.probe("gpspos", world.PLAYER_B, name)
+    return [vector(p) for p in reply.removeprefix("Probe gpspos:").split()]
+
+
+def test_grids_list_no_gps_by_default(game):
+    game.spawn(station("Bravo Base", owner=world.PLAYER_B))
+    assert "Bravo Base" in game.b.ess("grids list")
+    assert gps(game, world.PLAYER_B) == ""
+
+
+def test_grids_list_gps_for_all_grids_of_a_player_without_rights(game):
+    game.configure(MarkerShowPosition=True)
+    alpha = station("Alpha", owner=world.PLAYER_B)
+    game.spawn(
+        alpha,
+        station("Bravo", owner=world.PLAYER_B, position=offset(FRONT, 30)),
+        station("Charlie", position=offset(FRONT, 60)),
+    )
+    # The marker option doesn't need the position option
+    assert "Alpha - Large - 10 block(s) - Position Unknown" in game.b.ess("grids list")
+    assert gps(game, world.PLAYER_B) == "Alpha=1 Bravo=1"
+    assert gps(game, world.PLAYER_A) == ""
+    assert distance(gps_positions(game, "Alpha")[0], game.grid(alpha)["pos"]) < 0.01
+
+
+def test_grids_list_again_updates_the_gps_markers(game):
+    game.configure(MarkerShowPosition=True)
+    drifter = station("Drifter", owner=world.PLAYER_B, static=False)
+    base = station("Base", owner=world.PLAYER_B, position=offset(FRONT, 30))
+    game.spawn(drifter, base)
+    game.b.ess("grids list")
+    game.b.ess("ez hide Base")
+    # A marker of the player's own with the same name as a grid
+    game.a.probe("addgps", world.PLAYER_B, "Drifter", 1, 2, 3)
+
+    # Moved: one marker at the new position. Not moved: the marker stays as it is.
+    game.a.probe("velocity", drifter.entity_id, 0, 0, -20)
+    time.sleep(1)
+    game.a.probe("velocity", drifter.entity_id, 0, 0, 0)
+    game.b.ess("grids list")
+    assert gps(game, world.PLAYER_B) == "Base=0 Drifter=1 Drifter=1"
+    positions = gps_positions(game, "Drifter")
+    assert any(distance(p, (1, 2, 3)) < 0.01 for p in positions), positions
+    assert any(
+        distance(p, game.grid(drifter)["pos"]) < 0.01 for p in positions
+    ), positions
+
+    # Gone: its marker goes too
+    game.a.probe("clear")
+    assert game.b.ess("grids list") == "You own no grids."
+    assert gps(game, world.PLAYER_B) == "Drifter=1"
+    assert distance(gps_positions(game, "Drifter")[0], (1, 2, 3)) < 0.01
 
 
 def test_grids_export_and_import(game):
