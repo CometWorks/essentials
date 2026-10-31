@@ -6,9 +6,9 @@
 CLUSTER_TEST_DIR is the Test/ folder of a CometWorks/cluster checkout with its host.env (CLUSTER_PACKAGE,
 test root, port base, MAGNETAR_HOME) and `uv sync` done; run this with that folder's virtualenv python.
 WA + 2 regular nodes + one client without rights, on the package's example world. The grids are spawned on
-the node they should live on, and Essentials runs from this working copy with MarkerShowPosition on.
-
-Run on polaris on 2026-10-31, cluster 0.1.25: 5/5 checks in 4 minutes.
+the node they should live on, and Essentials runs from this working copy with MarkerShowPosition on. The last
+part takes far grids offline, one row as an older node would leave it (read back from its Final), one with
+the grids in its offer, and wakes one.
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ sys.path[:0] = [str(TEST_DIR), str(TEST_DIR.parent / "Cli"), str(REPO / "tests")
 
 import bench as bench_module  # noqa: E402  (loads host.env, sets MAGNETAR_HOME)
 from cluster import ClusterError, wait_until  # noqa: E402
+from scenarios_offline import _put_config  # noqa: E402
 from scenarios_core import (  # noqa: E402
     CLIENT_ID,
     _client_partition,
@@ -45,6 +46,8 @@ PROCESSES = ["wa-1", *NODES]
 PREFIX = "Ess810"
 NEAR = PREFIX + "Near"
 FAR = PREFIX + "Far"
+OLD = PREFIX + "Old"
+NEW = PREFIX + "New"
 
 
 def build() -> None:
@@ -97,6 +100,9 @@ def run(bench) -> None:
         )
     cluster.start(PROCESSES)
     cluster.wait_ready(nodes=PROCESSES)
+    # Off until the last part: the far grids would go offline at once
+    for node in NODES:
+        _put_config(bench, node, {"offline.enabled": "false"})
     api = bench.start_client(CLIENT_ID)
     bench.wait_spawned(CLIENT_ID)
 
@@ -230,6 +236,81 @@ def run(bench) -> None:
     expected[FAR] = moved_position
     markers, ok = settle(expected)
     bench.check("the marker of a moved grid moves with it", ok, str(markers))
+
+    # A partition that went offline without its grids in the offer, as from an older node
+    def configure(**values) -> None:
+        for node in NODES:
+            _put_config(
+                bench, node, {k.replace("_", "."): v for k, v in values.items()}
+            )
+
+    def offline_grid(grid: int) -> dict | None:
+        answer = cluster.get(f"/registry/partitions/offline/grids?owner={identity}")
+        return next((r for r in answer["grids"] if r["grid"]["id"] == grid), None)
+
+    def wait_offline(grid: int, what: str) -> dict:
+        return wait_until(lambda: offline_grid(grid), 240, what)
+
+    configure(offline_offerGrids="false")
+    old_grid, old_position = spawn(other, OLD, 80_000)
+    configure(
+        offline_enabled="true", offline_minOnlineSeconds="0", offline_graceSeconds="0"
+    )
+    row = wait_offline(old_grid, f"{OLD} read from its Final")
+    bench.check(
+        "a row without grids is read from its Final",
+        row["grid"]["o"] == [identity],
+        str(row),
+    )
+    logs = "".join(
+        p.read_text(errors="replace")
+        for node in NODES
+        for p in (bench.run_root / f"{node}-data").glob("SpaceEngineersDedicated_*.log")
+    )
+    bench.check(
+        "the backfill read it",
+        f"offline grids of partition {row['partition']} read" in logs,
+    )
+
+    configure(offline_offerGrids="true")
+    new_grid, new_position = spawn(other, NEW, 90_000)
+    row = wait_offline(new_grid, f"{NEW} from the offline offer")
+    bench.check(
+        "an offer carries the grids",
+        row["grid"]["n"] == NEW and row["grid"]["o"] == [identity],
+        str(row),
+    )
+
+    reply = grids_list()
+    bench.check(
+        "the list has the grids in offline partitions, marked",
+        f"{OLD} - Large - 1 block(s) - Position Unknown - Offline" in reply
+        and f"{NEW} - Large - 1 block(s) - Position Unknown - Offline" in reply
+        and f"{NEAR} - Large - 1 block(s) - Position Unknown\n" in reply + "\n",
+        reply,
+    )
+    expected.update({OLD: old_position, NEW: new_position})
+    markers, ok = settle(expected)
+    bench.check("a marker at each offline grid", ok, str(markers))
+
+    # Woken: a node has it, and it is listed once
+    configure(offline_enabled="false")
+    partition = offline_grid(new_grid)["partition"]
+    cluster.post(
+        f"/registry/partitions/offline/load?partition={partition}&node={home}&reason=test"
+    )
+    wait_until(
+        lambda: cluster.node(home, f"/partition-of?entity={new_grid}").get("partition"),
+        120,
+        f"{NEW} loaded on {home}",
+    )
+    reply = grids_list()
+    bench.check(
+        "a woken grid is listed once, not as offline",
+        reply.count(NEW) == 1
+        and f"{NEW} - Large - 1 block(s) - Position Unknown - Offline" not in reply,
+        reply,
+    )
 
 
 run.regular_nodes = 2
