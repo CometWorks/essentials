@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using PluginSdk.Clustering;
 using PluginSdk.Commands;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
@@ -136,49 +137,30 @@ public sealed partial class EssentialsModule
             return;
         }
 
-        long identityId = Context.Caller.IdentityId;
-
-        // On a cluster the grids may be on any node: each node lists the ones it owns
-        if (EssentialsCluster.Client() != null)
+        // The cluster plugin replaces this command on a node; a package too old to do that gets here,
+        // and this node's grids alone would be a partial list that removes the others' GPS markers
+        if (PluginCluster.IsClusterProcess)
         {
-            CommandContext context = Context;
-            ClusterCommands.ListGrids(
-                identityId,
-                grids =>
-                    context.Respond(
-                        grids == null
-                            ? "The other servers of the cluster did not answer. Try again."
-                            : FormatGrids(identityId, grids)
-                    )
+            Context.Respond(
+                "This command needs a newer cluster. Ask the server admin to update it."
             );
             return;
         }
 
+        long identityId = Context.Caller.IdentityId;
         Context.Respond(
             FormatGrids(
                 identityId,
-                OwnedGrids(identityId)
-                    .Select(grid => new ClusterCommands.GridLine
-                    {
-                        Id = grid.EntityId,
-                        Name = grid.DisplayName,
-                        Size = grid.GridSizeEnum.ToString(),
-                        Blocks = grid.BlocksCount,
-                        Position = grid.PositionComp.GetPosition(),
-                    })
+                MyEntities
+                    .GetEntities()
+                    .OfType<MyCubeGrid>()
+                    .Where(grid => IsActiveRealGrid(grid) && grid.BigOwners.Contains(identityId))
                     .ToList()
             )
         );
     }
 
-    /// <summary>The active real grids of this process that the player owns.</summary>
-    internal static IEnumerable<MyCubeGrid> OwnedGrids(long identityId) =>
-        MyEntities
-            .GetEntities()
-            .OfType<MyCubeGrid>()
-            .Where(grid => IsActiveRealGrid(grid) && grid.BigOwners.Contains(identityId));
-
-    private static string FormatGrids(long identityId, List<ClusterCommands.GridLine> grids)
+    private static string FormatGrids(long identityId, List<MyCubeGrid> grids)
     {
         UpdateGridGps(identityId, grids);
 
@@ -187,14 +169,14 @@ public sealed partial class EssentialsModule
 
         StringBuilder sb = new StringBuilder();
         sb.AppendLine($"Ships/stations owned by {Utilities.GetPlayerNameById(identityId)}:");
-        foreach (ClusterCommands.GridLine grid in grids.OrderBy(grid => grid.Name))
+        foreach (MyCubeGrid grid in grids.OrderBy(grid => grid.DisplayName))
         {
             string position =
                 Plugin.Instance?.Config?.UtilityShowPosition == true
-                    ? grid.Position.ToString()
+                    ? grid.PositionComp.GetPosition().ToString()
                     : "Unknown";
             sb.AppendLine(
-                $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s) - Position {position}"
+                $"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s) - Position {position}"
             );
         }
 
@@ -465,7 +447,7 @@ public sealed partial class EssentialsModule
             ? entity?.EntityId.ToString(CultureInfo.InvariantCulture) ?? "<null>"
             : entity.DisplayName;
 
-    private static void UpdateGridGps(long identityId, List<ClusterCommands.GridLine> grids)
+    private static void UpdateGridGps(long identityId, List<MyCubeGrid> grids)
     {
         if (
             Plugin.Instance?.Config?.MarkerShowPosition != true
@@ -475,16 +457,21 @@ public sealed partial class EssentialsModule
 
         // A marker of an earlier list is stale once its grid has moved or is gone
         foreach (IMyGps marker in gpsCollection.GetGpsList(identityId).Where(IsGridMarker).ToList())
-            if (!grids.Any(grid => grid.Name == marker.Name && grid.Position == marker.Coords))
+            if (
+                !grids.Any(grid =>
+                    grid.DisplayName == marker.Name
+                    && grid.PositionComp.GetPosition() == marker.Coords
+                )
+            )
                 gpsCollection.RemoveGps(identityId, marker);
 
-        foreach (ClusterCommands.GridLine grid in grids)
+        foreach (MyCubeGrid grid in grids)
             gpsCollection.AddGps(
                 identityId,
                 gpsCollection.Create(
-                    grid.Name,
-                    $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s)",
-                    grid.Position,
+                    grid.DisplayName,
+                    $"{grid.DisplayName} - {grid.GridSizeEnum} - {grid.BlocksCount:#,##0} block(s)",
+                    grid.PositionComp.GetPosition(),
                     true
                 )
             );
