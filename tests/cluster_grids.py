@@ -140,11 +140,11 @@ def run(bench) -> None:
         api.send_chat("!ess grids list")
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
-            found = [t for s, t, _ in hud() - before if s == "Essentials"]
+            found = [t for s, t, _ in hud() - before if s in ("ess", "Essentials")]
             if found:
                 return "\n".join(found)
             time.sleep(0.5)
-        raise ClusterError("No reply to !ess grids list")
+        raise ClusterError(f"No reply to !ess grids list, new on the HUD: {hud() - before}")
 
     def client_markers() -> dict[str, list[tuple]]:
         markers: dict[str, list[tuple]] = {}
