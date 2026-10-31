@@ -224,10 +224,8 @@ list output" and "Show GPS markers for owned-grid list output" (General tab, bot
 default) add each grid's position to the reply and give the caller a GPS marker at each
 grid, so a lost ship can be found. Listing again moves the markers of grids that have
 moved and removes those of grids that are gone. `!ess ez delete <name|all>` removes them
-by hand. On a Magnetar cluster every node lists the caller's grids it holds and the
-gateway adds those in offline partitions, marked "Offline", without loading them. The
-markers follow the player between nodes. A grid moving between nodes at that moment can
-be missing from the list; list again a few seconds later.
+by hand. On a Magnetar cluster the cluster plugin takes this command over, under the same
+options, to add the grids on other nodes and in offline partitions.
 
 | Command                                     | Permission  | Description                                                                                                |
 | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |

@@ -138,18 +138,17 @@ public sealed partial class EssentialsModule
 
         long identityId = Context.Caller.IdentityId;
 
-        // On a cluster the grids may be on any node, each node lists the ones it owns, or in an
-        // offline partition
+        // On a cluster the grids may be on any node: each node lists the ones it owns
         if (EssentialsCluster.Client() != null)
         {
             CommandContext context = Context;
             ClusterCommands.ListGrids(
                 identityId,
-                (grids, note) =>
+                grids =>
                     context.Respond(
                         grids == null
                             ? "The other servers of the cluster did not answer. Try again."
-                            : (FormatGrids(identityId, grids).TrimEnd() + "\n" + note).TrimEnd()
+                            : FormatGrids(identityId, grids)
                     )
             );
             return;
@@ -195,7 +194,7 @@ public sealed partial class EssentialsModule
                     ? grid.Position.ToString()
                     : "Unknown";
             sb.AppendLine(
-                $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s) - Position {position}{(grid.Offline ? " - Offline" : "")}"
+                $"{grid.Name} - {grid.Size} - {grid.Blocks:#,##0} block(s) - Position {position}"
             );
         }
 

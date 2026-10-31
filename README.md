@@ -168,9 +168,6 @@ What it covers:
 Behavior the plugin documents but doesn't have yet, and bugs found by the suite, are
 strict xfails that name their ticket, so a fix shows up as an unexpected pass.
 
-`tests/cluster_grids.py` runs `!ess grids list` and its GPS markers on a cluster of two
-nodes through the cluster's scenario bench; its docstring says how.
-
 Not covered: mission screens (the MOTD, `!ess help` and dialogs fall back to chat because
 the clients run without MagnetarMod), the Steam overlay URL, planet resets (the test
 world has no planets), PCU transfer limits (block limits are off in the test world), the
