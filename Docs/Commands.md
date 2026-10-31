@@ -225,7 +225,8 @@ default) add each grid's position to the reply and give the caller a GPS marker 
 grid, so a lost ship can be found. Listing again moves the markers of grids that have
 moved and removes those of grids that are gone. `!ess ez delete <name|all>` removes them
 by hand. On a Magnetar cluster the cluster plugin takes this command over, under the same
-options, to add the grids on other nodes and in offline partitions.
+options, to add the grids on other nodes and in offline partitions. With a cluster package
+too old to do that, the command only says the cluster needs an update.
 
 | Command                                     | Permission  | Description                                                                                                |
 | ------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------- |
