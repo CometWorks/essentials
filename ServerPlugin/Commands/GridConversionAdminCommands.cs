@@ -32,7 +32,7 @@ public sealed partial class EssentialsModule
         int converted = 0;
         foreach (MyCubeGrid grid in GetConversionGrids(group).Where(grid => grid.IsStatic))
         {
-            grid.RequestConversionToShip(null);
+            GridConversion.ToShip(grid);
             converted++;
         }
 
@@ -58,7 +58,7 @@ public sealed partial class EssentialsModule
         foreach (MyCubeGrid grid in GetConversionGrids(group).Where(grid => !grid.IsStatic))
         {
             grid.Physics?.ClearSpeed();
-            grid.OnConvertedToStationRequest();
+            GridConversion.ToStation(grid, Context.Caller.SteamId);
             converted++;
         }
 
@@ -109,7 +109,7 @@ public sealed partial class EssentialsModule
         if (hasStatic)
         {
             foreach (MyCubeGrid grid in grids)
-                grid.RequestConversionToShip(null);
+                GridConversion.ToShip(grid);
 
             return $"Converting {grids.Count:#,##0} grid(s) to ships.";
         }
@@ -127,7 +127,7 @@ public sealed partial class EssentialsModule
         {
             grid.Physics?.Clear();
             grid.Physics?.ClearSpeed();
-            grid.OnConvertedToStationRequest();
+            GridConversion.ToStation(grid, Context.Caller.SteamId);
         }
 
         return $"Converting {grids.Count:#,##0} grid(s) to stations.";

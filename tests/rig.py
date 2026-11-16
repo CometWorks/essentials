@@ -35,7 +35,9 @@ The server and the clients download hub plugins from GitHub. On a machine
 GitHub's API rate limits, export PULSAR_GITHUB_TOKEN: Pulsar and Magnetar read
 it from the environment the rig passes on. Or put the plugins Magnetar can't
 download into ES_SERVER_DEV_FOLDERS as dev folders: name|folder|file entries
-separated by ";".
+separated by ";". ES_CLIENT_DEV_FOLDERS does the same for the clients, for
+example a linux-compat branch the game needs. The name of an entry must be the
+plugin's manifest Id, because the loader profile enables dev folders by Id.
 """
 
 from __future__ import annotations
@@ -185,6 +187,16 @@ def profile_xml(dev_folders) -> str:
     )
 
 
+def dev_folders(variable: str) -> dict[str, tuple[Path, str]]:
+    """Extra dev folders from an environment variable: name|folder|file
+    entries separated by semicolons"""
+    entries = filter(None, os.environ.get(variable, "").split(";"))
+    return {
+        name: (Path(folder), file)
+        for name, folder, file in (entry.split("|") for entry in entries)
+    }
+
+
 def write_sources(sources: Path, plugins: dict[str, tuple[Path, str]]) -> None:
     """The loader's dev folder sources: exactly these, name -> (folder, file)"""
     tree = ET.parse(sources)
@@ -276,15 +288,12 @@ class Server:
             "essentials-probe": (PROBE, "EssentialsProbe.xml"),
             "direct-transport": (DIRECT_TRANSPORT_REPO, "DirectTransportServer.xml"),
         }
-        for entry in filter(
-            None, os.environ.get("ES_SERVER_DEV_FOLDERS", "").split(";")
-        ):
-            name, folder, file = entry.split("|")
-            sources[name] = (Path(folder), file)
+        extra = dev_folders("ES_SERVER_DEV_FOLDERS")
+        sources.update(extra)
         write_sources(self.config / "Sources" / "sources.xml", sources)
         (self.config / "Profiles").mkdir(exist_ok=True)
         (self.config / "Profiles" / "Current.xml").write_text(
-            profile_xml(["direct-transport", ESSENTIALS_ID, PROBE_ID]),
+            profile_xml(["direct-transport", ESSENTIALS_ID, PROBE_ID, *extra]),
             encoding="utf-8",
         )
         admins_xml = "".join(f"<unsignedLong>{a}</unsignedLong>" for a in admins)
@@ -444,19 +453,18 @@ class Client:
 
     def _write_configs(self) -> None:
         legacy = self.pulsar / "Legacy"
+        sources = {
+            "remote": (REMOTE_REPO, "Remote.xml"),
+            "direct-transport": (
+                DIRECT_TRANSPORT_REPO,
+                "DirectTransportClient.xml",
+            ),
+        }
+        sources.update(dev_folders("ES_CLIENT_DEV_FOLDERS"))
         (legacy / "Profiles" / "Current.xml").write_text(
-            profile_xml(["remote", "direct-transport"]), encoding="utf-8"
+            profile_xml(list(sources)), encoding="utf-8"
         )
-        write_sources(
-            legacy / "Sources" / "sources.xml",
-            {
-                "remote": (REMOTE_REPO, "Remote.xml"),
-                "direct-transport": (
-                    DIRECT_TRANSPORT_REPO,
-                    "DirectTransportClient.xml",
-                ),
-            },
-        )
+        write_sources(legacy / "Sources" / "sources.xml", sources)
         self.appdata.mkdir(parents=True, exist_ok=True)
         (self.appdata / "Remote.cfg").write_text(
             '<?xml version="1.0" encoding="utf-8"?>\n'

@@ -274,7 +274,7 @@ public sealed partial class EssentialsModule
         int count = 0;
         foreach (MyCubeGrid grid in grids)
         {
-            grid.OnConvertedToStationRequest();
+            GridConversion.ToStation(grid, Context.Caller.SteamId);
             count++;
         }
 
