@@ -59,6 +59,14 @@ public sealed partial class EssentialsModule
     public string RegionSetRules(string name, RegionRules rules) =>
         WithRegions(store => store.Change(name, edit: rules));
 
+    [Command(
+        "region skin",
+        "Choose a safe-zone skin or Grid and optionally set the pattern size in metres."
+    )]
+    [Permission(MyPromoteLevel.Admin)]
+    public string RegionSkin(string name, BarrierSkin skin, int patternMeters = 500) =>
+        WithRegions(store => store.Change(name, skin: skin, meters: patternMeters));
+
     [Command("region delete", "Remove a named region from this world.")]
     [Permission(MyPromoteLevel.Admin)]
     public string RegionDelete(string name) => WithRegions(store => store.Change(name));
@@ -102,11 +110,13 @@ public sealed partial class EssentialsModule
     {
         var lines = regions
             .Select(r =>
-                r.Radius is double radius
-                    ? FormattableString.Invariant(
-                        $"{r.Name} [{r.Rules}] sphere at {Gps(r.First)}, radius {radius / 1000:R} km"
-                    )
-                    : $"{r.Name} [{r.Rules}] box from {Gps(r.First)} to {Gps(r.Second)}"
+                (
+                    r.Radius is double radius
+                        ? FormattableString.Invariant(
+                            $"{r.Name} [{r.Rules}] sphere at {Gps(r.First)}, radius {radius / 1000:R} km"
+                        )
+                        : $"{r.Name} [{r.Rules}] box from {Gps(r.First)} to {Gps(r.Second)}"
+                ) + $", skin {r.Skin}, pattern {r.PatternMeters} m"
             )
             .ToArray();
         return lines.Length == 0 ? "No matching regions." : string.Join("\n", lines);

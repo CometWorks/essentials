@@ -16,6 +16,7 @@ internal static class RegionIndicators
         public RegionProximity Proximity = new();
         public CombatRegion[] Sent = Array.Empty<CombatRegion>();
         public long Refresh;
+        public int DistanceKm;
     }
 
     private static readonly Dictionary<ulong, Observer> observers = new();
@@ -30,6 +31,7 @@ internal static class RegionIndicators
         if (regions.Length == 0 && observers.Count == 0)
             return;
 
+        int distanceKm = Plugin.Instance?.PluginConfig?.RegionBarrierDistanceKm ?? 0;
         var online = new HashSet<ulong>();
         foreach (var player in MySession.Static.Players.GetOnlinePlayers())
         {
@@ -46,7 +48,10 @@ internal static class RegionIndicators
                 {
                     if (observer != null)
                     {
-                        if (observer.Sent.Length != 0 && !Send(id, Array.Empty<CombatRegion>()))
+                        if (
+                            observer.Sent.Length != 0
+                            && !Send(id, Array.Empty<CombatRegion>(), distanceKm)
+                        )
                             continue;
                         observers.Remove(id);
                     }
@@ -60,22 +65,30 @@ internal static class RegionIndicators
                     observer.Proximity = new RegionProximity();
                 }
 
-                observer.Proximity.Sample(regions, entity.PositionComp.GetPosition(), message =>
-                    MyVisualScriptLogicProvider.ShowNotification(
-                        message,
-                        4500,
-                        MyFontEnum.White,
-                        identity
-                    )
+                observer.Proximity.Sample(
+                    regions,
+                    entity.PositionComp.GetPosition(),
+                    message =>
+                        MyVisualScriptLogicProvider.ShowNotification(
+                            message,
+                            4500,
+                            MyFontEnum.White,
+                            identity
+                        ),
+                    distanceKm
                 );
                 var nearby = observer.Proximity.Nearby;
                 if (
                     !nearby.SequenceEqual(observer.Sent)
-                    || (nearby.Length > 0 && tick >= observer.Refresh)
+                    || (
+                        nearby.Length > 0
+                        && (distanceKm != observer.DistanceKm || tick >= observer.Refresh)
+                    )
                 )
                 {
-                    if (Send(id, nearby))
+                    if (Send(id, nearby, distanceKm))
                     {
+                        observer.DistanceKm = distanceKm;
                         observer.Sent = nearby;
                         observer.Refresh = tick + 120;
                     }
@@ -90,6 +103,16 @@ internal static class RegionIndicators
             observers.Remove(id);
     }
 
-    private static bool Send(ulong id, CombatRegion[] regions) =>
-        MyAPIGateway.Multiplayer?.SendMessageTo(48733, RegionProximity.Encode(regions), id) == true;
+    private static bool Send(ulong id, CombatRegion[] regions, int distanceKm)
+    {
+        var multiplayer = MyAPIGateway.Multiplayer;
+        // Older companions ignore v2 and keep their close-range grid. Ordered reliable
+        // delivery gives current clients the styled snapshot after the compatibility frame.
+        return multiplayer != null
+            && multiplayer.SendMessageTo(48733, RegionProximity.Encode(regions), id)
+            && (
+                regions.Length == 0
+                || multiplayer.SendMessageTo(48733, RegionProximity.Encode(regions, distanceKm), id)
+            );
+    }
 }

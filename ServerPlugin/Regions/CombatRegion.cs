@@ -14,6 +14,28 @@ public enum RegionRules
     Peace = Firing | Incoming,
 }
 
+// Stable byte IDs in the companion's region snapshot.
+public enum BarrierSkin : byte
+{
+    Grid,
+    Default,
+    Aura,
+    Organic,
+    Rain,
+    Dots,
+    Disco,
+    Noise,
+    Hexagon,
+    Lines,
+    Digital,
+    Gloura,
+    Clang,
+    Voronoi,
+    Restricted,
+    KeenSWH,
+    Disabled,
+}
+
 // Coordinates and radii are world metres. A missing radius denotes a box.
 internal sealed class CombatRegion
 {
@@ -22,13 +44,20 @@ internal sealed class CombatRegion
     public Vector3D First { get; }
     public Vector3D Second { get; }
     public double? Radius { get; }
+    public BarrierSkin Skin { get; }
+    public int PatternMeters { get; }
+
+    // Appearance-only edits retain the observer's approach/entry state.
+    public object NoticeKey { get; private set; } = new object();
 
     public CombatRegion(
         string name,
         RegionRules rules,
         Vector3D first,
         Vector3D second,
-        double? radius
+        double? radius,
+        BarrierSkin skin = BarrierSkin.Grid,
+        int patternMeters = 500
     )
     {
         if (string.IsNullOrWhiteSpace(name) || name.Length > 100 || name.Trim() != name)
@@ -48,6 +77,12 @@ internal sealed class CombatRegion
         if (!radius.HasValue && (first.X == second.X || first.Y == second.Y || first.Z == second.Z))
             throw new ArgumentException("Box corners must differ on all three axes.");
 
+        if (!Enum.IsDefined(typeof(BarrierSkin), skin))
+            throw new ArgumentException("Unknown barrier skin.");
+        if (patternMeters < 64 || patternMeters > 8192)
+            throw new ArgumentException("Pattern size must be 64 to 8192 metres.");
+        Skin = skin;
+        PatternMeters = patternMeters;
         Name = name;
         Rules = rules;
         Radius = radius;
@@ -59,7 +94,13 @@ internal sealed class CombatRegion
         !double.IsNaN(position.LengthSquared()) && !double.IsInfinity(position.LengthSquared());
 
     public CombatRegion WithRules(RegionRules rules) =>
-        new CombatRegion(Name, rules, First, Second, Radius);
+        new CombatRegion(Name, rules, First, Second, Radius, Skin, PatternMeters);
+
+    public CombatRegion WithSkin(BarrierSkin skin, int? meters) =>
+        new CombatRegion(Name, Rules, First, Second, Radius, skin, meters ?? PatternMeters)
+        {
+            NoticeKey = this.NoticeKey,
+        };
 
     public bool Contains(Vector3D point) =>
         Radius is double radius
@@ -139,6 +180,8 @@ internal sealed class CombatRegion
             Radius.HasValue ? "Sphere" : "Box",
             new XAttribute("name", Name),
             new XAttribute("rules", Rules),
+            new XAttribute("skin", Skin),
+            new XAttribute("patternMeters", PatternMeters),
             Point("First", First)
         );
         if (Radius.HasValue)
@@ -176,7 +219,10 @@ internal sealed class CombatRegion
                 : ReadPoint(
                     e.Element("Second") ?? throw new InvalidDataException("Missing second corner.")
                 ),
-            sphere ? (double)e.Attribute("radius") : null
+            sphere ? (double)e.Attribute("radius") : null,
+            (BarrierSkin)
+                Enum.Parse(typeof(BarrierSkin), (string)e.Attribute("skin") ?? "Grid", true),
+            (int?)e.Attribute("patternMeters") ?? 500
         );
     }
 }

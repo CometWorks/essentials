@@ -96,7 +96,7 @@ public class RegionTests
         void Visit(double distance) =>
             observer.Sample(snapshot, edge + Vector3D.UnitX * distance, notices.Add);
 
-        Visit(4000);
+        Visit(50000);
         Assert.Empty(observer.Nearby);
         Visit(1990);
         Visit(2010);
@@ -164,6 +164,60 @@ public class RegionTests
                 Assert.Equal(expected, reader.ReadDouble());
         }
         Assert.Equal(new byte[] { 1, 0 }, RegionProximity.Encode(Array.Empty<CombatRegion>()));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void VisualRangeTracksTheNearestBorderIndependentlyOfHud(bool sphere)
+    {
+        var region = Region(sphere);
+        var regions = new[] { region };
+        var observer = new RegionProximity();
+        var notices = new List<string>();
+        var edge = Center + Vector3D.UnitX * Size;
+        foreach (int sign in new[] { 1, -1 })
+        {
+            observer.Sample(regions, edge + Vector3D.UnitX * sign * 50000, notices.Add);
+            Assert.Empty(observer.Nearby);
+            observer.Sample(regions, edge + Vector3D.UnitX * sign * 49990, notices.Add);
+            Assert.Same(region, Assert.Single(observer.Nearby));
+            observer.Sample(regions, edge + Vector3D.UnitX * sign * 10001, notices.Add, 10);
+            Assert.Empty(observer.Nearby);
+        }
+        notices.Clear();
+        observer = new RegionProximity();
+        observer.Sample(regions, edge + Vector3D.UnitX * 1000, notices.Add, 0);
+        Assert.Empty(observer.Nearby);
+        Assert.StartsWith("Near Harbor", Assert.Single(notices));
+    }
+
+    [Fact]
+    public void SkinEditsRoundTripWithoutRearmingEntryOrChangingRules()
+    {
+        var legacy = Region(false).ToXml();
+        legacy.Attribute("skin").Remove();
+        legacy.Attribute("patternMeters").Remove();
+        var before = CombatRegion.FromXml(legacy);
+        Assert.Equal(BarrierSkin.Grid, before.Skin);
+        Assert.Equal(500, before.PatternMeters);
+        var after = before.WithSkin(BarrierSkin.Hexagon, 750);
+        var observer = new RegionProximity();
+        var notices = new List<string>();
+        observer.Sample(new[] { before }, Center, notices.Add);
+        observer.Sample(new[] { after }, Center, notices.Add);
+        Assert.Single(notices);
+        var restored = CombatRegion.FromXml(after.ToXml()).WithRules(RegionRules.Firing);
+        Assert.Equal(BarrierSkin.Hexagon, restored.Skin);
+        Assert.Equal(750, restored.PatternMeters);
+        Assert.Equal(before.Rules, after.Rules);
+        var packet = RegionProximity.Encode(new[] { after }, 40);
+        Assert.Equal(63, packet.Length);
+        Assert.Equal(new byte[] { 2, 1, 40, 0 }, packet.Take(4));
+        Assert.Equal((byte)BarrierSkin.Hexagon, packet[60]);
+        Assert.Equal(750, BitConverter.ToUInt16(packet, 61));
+        Assert.Throws<ArgumentException>(() => before.WithSkin((BarrierSkin)200, 200));
+        Assert.Throws<ArgumentException>(() => before.WithSkin(BarrierSkin.Dots, 0));
     }
 
     [Fact]

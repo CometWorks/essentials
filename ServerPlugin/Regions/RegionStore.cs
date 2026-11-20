@@ -45,7 +45,13 @@ internal sealed class RegionStore
         }
     }
 
-    public string Change(string name, CombatRegion create = null, RegionRules? edit = null)
+    public string Change(
+        string name,
+        CombatRegion create = null,
+        RegionRules? edit = null,
+        BarrierSkin? skin = null,
+        int? meters = null
+    )
     {
         lock (gate)
         {
@@ -61,6 +67,8 @@ internal sealed class RegionStore
                 next.Add(create);
             else if (edit.HasValue)
                 next[index] = next[index].WithRules(edit.Value);
+            else if (skin.HasValue)
+                next[index] = next[index].WithSkin(skin.Value, meters);
             else
                 next.RemoveAt(index);
 
@@ -68,7 +76,7 @@ internal sealed class RegionStore
             Write(path, snapshot);
             regions = snapshot;
             return create != null ? $"Created region '{name}'."
-                : edit.HasValue ? $"Updated region '{name}'."
+                : (edit.HasValue || skin.HasValue) ? $"Updated region '{name}'."
                 : $"Deleted region '{name}'.";
         }
     }

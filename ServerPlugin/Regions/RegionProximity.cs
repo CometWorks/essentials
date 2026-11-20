@@ -16,15 +16,20 @@ internal sealed class RegionProximity
         Inside,
     }
 
-    private readonly Dictionary<CombatRegion, Location> locations = new();
+    private readonly Dictionary<object, Location> locations = new();
     private CombatRegion[] previous;
     public CombatRegion[] Nearby { get; private set; } = Array.Empty<CombatRegion>();
 
-    public void Sample(CombatRegion[] regions, Vector3D position, Action<string> notify)
+    public void Sample(
+        CombatRegion[] regions,
+        Vector3D position,
+        Action<string> notify,
+        int distanceKm = 50
+    )
     {
         if (previous != regions)
         {
-            foreach (var old in locations.Keys.Except(regions).ToArray())
+            foreach (var old in locations.Keys.Except(regions.Select(r => r.NoticeKey)).ToArray())
                 locations.Remove(old);
             previous = regions;
         }
@@ -42,7 +47,7 @@ internal sealed class RegionProximity
             if (region.Rules == RegionRules.None)
                 continue;
             var distance = region.BoundaryDistance(position);
-            locations.TryGetValue(region, out var before);
+            locations.TryGetValue(region.NoticeKey, out var before);
             // Hold the last notice through small position changes on either threshold.
             var now =
                 distance <= 0 || (before == Location.Inside && distance < 10) ? Location.Inside
@@ -51,9 +56,9 @@ internal sealed class RegionProximity
             if (now != before)
             {
                 if (now == Location.Far)
-                    locations.Remove(region);
+                    locations.Remove(region.NoticeKey);
                 else
-                    locations[region] = now;
+                    locations[region.NoticeKey] = now;
                 var rules = region.Rules switch
                 {
                     RegionRules.Firing => "Firing blocked",
@@ -73,7 +78,7 @@ internal sealed class RegionProximity
                     Announce($"Near {region.Name} ({range}) — {rules}");
                 }
             }
-            if (Math.Abs(distance) <= 2500)
+            if (distanceKm > 0 && Math.Abs(distance) < distanceKm * 1000d)
                 (visible ??= new()).Add((region, Math.Abs(distance)));
         }
         if (changes > noticeLimit)
@@ -87,12 +92,14 @@ internal sealed class RegionProximity
     }
 
     // MagnetarMod.RegionBarriers consumes this little-endian snapshot on channel 48733.
-    public static byte[] Encode(CombatRegion[] nearby)
+    public static byte[] Encode(CombatRegion[] nearby, int? distanceKm = null)
     {
-        using var stream = new MemoryStream(2 + 56 * nearby.Length);
+        using var stream = new MemoryStream(distanceKm.HasValue ? 4 + 59 * nearby.Length : 2 + 56 * nearby.Length);
         using var writer = new BinaryWriter(stream);
-        writer.Write((byte)1);
+        writer.Write((byte)(distanceKm.HasValue ? 2 : 1));
         writer.Write((byte)nearby.Length);
+        if (distanceKm.HasValue)
+            writer.Write((ushort)distanceKm.Value);
         foreach (var region in nearby)
         {
             writer.Write(region.First.X);
@@ -102,6 +109,11 @@ internal sealed class RegionProximity
             writer.Write(region.Second.Y);
             writer.Write(region.Second.Z);
             writer.Write(region.Radius ?? 0);
+            if (distanceKm.HasValue)
+            {
+                writer.Write((byte)region.Skin);
+                writer.Write((ushort)region.PatternMeters);
+            }
         }
         return stream.ToArray();
     }

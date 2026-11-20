@@ -264,6 +264,7 @@ On a standalone Magnetar server, an admin can create a named sphere or an axis-a
 | `!ess region list` | Show names, rules, geometry and GPS coordinates. |
 | `!ess region inspect [here or GPS]` | Show every region covering a point. |
 | `!ess region rules <name> <rules>` | Apply a new rule selection immediately. |
+| `!ess region skin <name> <skin> [patternMeters]` | Set the barrier appearance. Pattern size defaults to 500 m and accepts 64–8192 m. |
 | `!ess region delete <name>` | Remove the named region. |
 
 | Rules | Behavior |
@@ -277,7 +278,9 @@ Restrictions from overlapping regions combine. Ordinary game and safe-zone restr
 
 Players get a HUD warning within 2 km of an active border. It names the region, gives the distance and lists the shooting restrictions. Crossing into the region gives an entry notice. Moving at least 10 m back outside gives an exit notice. The approach warning re-arms at 2.2 km. Each overlapping region tracks its own notices.
 
-With the updated Magnetar companion mod loaded, a translucent cyan grid marks the boundary from either side. It appears locally as you approach, including in the middle of a large box face. At most the four nearest borders are drawn. Ships and players can cross the grid. The HUD warnings and server rules work independently of the companion. Setting a region to `none` hides its grid and silences its notices.
+The updated Magnetar companion draws a local patch on each of the four closest active borders. In Quasar, open **Essentials → General → Combat regions** to set `RegionBarrierDistanceKm`. The default is **50 km** from the closest point on the surface, inside or outside. Set it to any whole number from 0 to 500 km. Zero hides all barriers while keeping the HUD notices and combat rules active. Changes take effect during play.
+
+Use `!ess region skin "Trade Harbor" Hexagon 750` for a larger pattern or `!ess region skin "Trade Harbor" Grid` to restore the original cyan lattice. The scale sets the width of one texture repeat in metres on a flat face. Sphere faces curve around the zone. Names are case-insensitive. The stock choices are `Default`, `Aura`, `Organic`, `Rain`, `Dots`, `Disco`, `Noise`, `Hexagon`, `Lines`, `Digital`, `Gloura`, `Clang`, `Voronoi`, `Restricted`, `KeenSWH` and `Disabled`. The last name selects the game's disabled-zone texture. Setting the region's **rules** to `none` suspends its restrictions and indicators. Existing regions use `Grid` at 500 m. Both `list` and `inspect` show the saved appearance. Ships and players can cross the surface.
 
 Definitions are saved immediately in `Storage/Essentials/Regions.xml` under the active world. A new world inherits its template's regions. An existing named save keeps its own definitions when the server opens the template again. Back up this file with the world. If the file is unreadable or invalid, Essentials logs an error, refuses edits and blocks vanilla firing while enabled. Restore the file and reload the world to recover. Cluster processes leave this standalone feature inactive.
 

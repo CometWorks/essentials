@@ -17,7 +17,7 @@ common quality-of-life server behaviour, configured through the Magnetar
   grid collision voxel cutouts.
 - **Combat regions** — standalone admins can protect large spheres and boxes from
   firing and incoming vanilla ammunition. Players receive proximity and crossing notices.
-  The updated Magnetar companion mod also draws the nearby boundary. See the [region commands](Docs/Commands.md#combat-regions).
+  The updated Magnetar companion mod draws nearby borders with configurable safe-zone skins, pattern size and visibility distance. See the [region commands](Docs/Commands.md#combat-regions).
 - **Blocks, economy, PCU/ownership transfer, Stone cleanup, grid conversion,
   safezone, GPS and station maintenance** utilities.
 
