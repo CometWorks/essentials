@@ -17,6 +17,7 @@ import rig
 import world
 from conftest import confirm, wait_until
 from session import FRONT, distance, offset, parse, vector
+from test_voxels import CENTER as ROCK_CENTER, rock  # noqa: F401
 
 
 def look_at_grid(player, g: prefabs.Grid, stand=None) -> None:
@@ -372,6 +373,17 @@ def test_admin_makeship_by_look(game):
     game.spawn(g)
     look_at_grid(game.a, g)
     assert game.a.ess("admin makeship") == "Converting 1 grid(s) to ships."
+
+
+def test_admin_makeship_refused_in_voxels(game, rock):
+    g = station("Buried", position=ROCK_CENTER)
+    game.spawn(g)
+    assert (
+        game.a.ess("admin makeship Buried")
+        == "The game refused to convert 1 grid(s) to ships, for example stations in voxels."
+    )
+    time.sleep(1)
+    assert game.grid(g)["static"]
 
 
 def test_admin_rename(game):

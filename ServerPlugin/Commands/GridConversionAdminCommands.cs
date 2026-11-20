@@ -30,15 +30,27 @@ public sealed partial class EssentialsModule
             return error;
 
         int converted = 0;
+        int refused = 0;
         foreach (MyCubeGrid grid in GetConversionGrids(group).Where(grid => grid.IsStatic))
         {
-            GridConversion.ToShip(grid);
-            converted++;
+            if (GridConversion.ToShip(grid))
+                converted++;
+            else
+                refused++;
         }
 
-        return converted == 0
+        return converted + refused == 0
             ? "No station grids found in the target group."
-            : $"Converting {converted:#,##0} grid(s) to ships.";
+            : ShipConversionReply(converted, refused);
+    }
+
+    private static string ShipConversionReply(int converted, int refused)
+    {
+        string reply = converted > 0 ? $"Converting {converted:#,##0} grid(s) to ships." : "";
+        if (refused > 0)
+            reply +=
+                $" The game refused to convert {refused:#,##0} grid(s) to ships, for example stations in voxels.";
+        return reply.TrimStart();
     }
 
     [Command("admin makestation", "Convert a ship grid group to stations.")]
@@ -108,10 +120,8 @@ public sealed partial class EssentialsModule
 
         if (hasStatic)
         {
-            foreach (MyCubeGrid grid in grids)
-                GridConversion.ToShip(grid);
-
-            return $"Converting {grids.Count:#,##0} grid(s) to ships.";
+            int converted = grids.Count(GridConversion.ToShip);
+            return ShipConversionReply(converted, grids.Count - converted);
         }
 
         if (grids.Any(grid => grid.GridSizeEnum == MyCubeSize.Small))
