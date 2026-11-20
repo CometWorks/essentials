@@ -237,6 +237,18 @@ def test_missiles_cut_voxels_without_protection(game, rock):
     assert fire_missile(game, rock_id) > 1
 
 
+def test_incoming_region_intercepts_missile_before_asteroid(game, rock):
+    rock_id, _ = rock
+    name = "Asteroid harbor"
+    try:
+        # The launcher is 150 m from the center, the asteroid is inside the 70 m shield.
+        reply = game.a.ess(f'region sphere "{name}" 0.07 incoming GPS:rock:0:0:-600:')
+        assert reply == f"Created region '{name}'."
+        assert fire_missile(game, rock_id) == pytest.approx(0, abs=0.5)
+    finally:
+        game.a.ess(f'region delete "{name}"')
+
+
 def test_missile_protection(game, rock):
     rock_id, _ = rock
     game.configure(ProtectVoxelsFromMissiles=True)

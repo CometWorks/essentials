@@ -253,6 +253,30 @@ too old to do that, the command only says the cluster needs an update.
 | `!ess gridtype [gridName]`                  | None        | Report whether target grids are ships or stations.                                                         |
 | `!stone [outputCount]`                      | None        | Delete Stone ore from inventories on the controlled grid or looked-at owned/faction grid group.            |
 
+## Combat regions
+
+On a standalone Magnetar server, an admin can create a named sphere or an axis-aligned box in world coordinates. For example, stand at a trade station and run `!ess region sphere "Trade Harbor" 250 peace` to protect a 250 km radius. A server console can supply a GPS marker in place of `here`. Quote names and GPS markers containing spaces.
+
+| Admin command | Effect |
+|---|---|
+| `!ess region sphere <name> <radiusKm> [rules] [here or GPS]` | Create a sphere. Defaults to peace at the caller's position. |
+| `!ess region box <name> <corner1> <corner2> [rules]` | Create a box using two opposite GPS corners in either order. Either corner may be `here`. |
+| `!ess region list` | Show names, rules, geometry and GPS coordinates. |
+| `!ess region inspect [here or GPS]` | Show every region covering a point. |
+| `!ess region rules <name> <rules>` | Apply a new rule selection immediately. |
+| `!ess region delete <name>` | Remove the named region. |
+
+| Rules | Behavior |
+|---|---|
+| `firing` | Denies vanilla shooting when the character or mounted weapon touches the region. |
+| `incoming` | Intercepts vanilla bullets and missiles entering the region. Shots originating inside can travel and leave. A nearer hit outside the border still resolves. |
+| `peace` | Applies both restrictions. |
+| `none` | Keeps the shape and suspends its rules. |
+
+Restrictions from overlapping regions combine. Ordinary game and safe-zone restrictions still apply. Region rules also cover admins using the vanilla ignore-safe-zones switch. A region has no visible in-game shield. Explosions originating outside can still deal splash damage across a border. Collisions, warheads and custom weapon systems such as WeaponCore are outside these two rules.
+
+Definitions are saved immediately in `Storage/Essentials/Regions.xml` under the active world. A new world inherits its template's regions. An existing named save keeps its own definitions when the server opens the template again. Back up this file with the world. If the file is unreadable or invalid, Essentials logs an error, refuses edits and blocks vanilla firing while enabled. Restore the file and reload the world to recover. Cluster processes leave this standalone feature inactive.
+
 ## Safe zones, GPS & economy stations
 
 | Command                                             | Permission | Description                                                                                                                      |
