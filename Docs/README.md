@@ -18,7 +18,7 @@ All settings are edited in the Quasar web UI, generated from the plugin's
 
 | Tab | What it covers |
 |---|---|
-| **General** | Enable the plugin, matchmaking tags, grid-list output, stop-on-start, and voxel deformation controls. |
+| **General** | Enable the plugin, matchmaking tags, grid-list output, stop-on-start, voxel deformation controls and combat region visibility. |
 | **MOTD** | Connect messages and the Steam-overlay URL, with new-user variants. |
 | **Cleanup** | Empty-backpack limit and grid look notifications. |
 | **PCU Tools** | PCU transfer limit checking (BlockLimits integration). |

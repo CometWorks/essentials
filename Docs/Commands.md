@@ -253,6 +253,37 @@ too old to do that, the command only says the cluster needs an update.
 | `!ess gridtype [gridName]`                  | None        | Report whether target grids are ships or stations.                                                         |
 | `!stone [outputCount]`                      | None        | Delete Stone ore from inventories on the controlled grid or looked-at owned/faction grid group.            |
 
+## Combat regions
+
+On a standalone Magnetar server, an admin can create a named sphere or an axis-aligned box in world coordinates. For example, stand at a trade station and run `!ess region sphere "Trade Harbor" 250 peace` to protect a 250 km radius. A server console can supply a GPS marker in place of `here`. Quote names and GPS markers containing spaces.
+
+| Admin command | Effect |
+|---|---|
+| `!ess region sphere <name> <radiusKm> [rules] [here or GPS]` | Create a sphere. Defaults to peace at the caller's position. |
+| `!ess region box <name> <corner1> <corner2> [rules]` | Create a box using two opposite GPS corners in either order. Either corner may be `here`. |
+| `!ess region list` | Show names, rules, geometry and GPS coordinates. |
+| `!ess region inspect [here or GPS]` | Show every region covering a point. |
+| `!ess region rules <name> <rules>` | Apply a new rule selection immediately. |
+| `!ess region skin <name> <skin> [patternMeters]` | Set the barrier appearance. Pattern size defaults to 500 m and accepts 64–8192 m. |
+| `!ess region delete <name>` | Remove the named region. |
+
+| Rules | Behavior |
+|---|---|
+| `firing` | Denies vanilla shooting when the character or mounted weapon touches the region. |
+| `incoming` | Intercepts vanilla bullets and missiles entering the region. Shots originating inside can travel and leave. A nearer hit outside the border still resolves. |
+| `peace` | Applies both restrictions. |
+| `none` | Keeps the shape and suspends its rules. |
+
+Restrictions from overlapping regions combine. Ordinary game and safe-zone restrictions still apply. Region rules also cover admins using the vanilla ignore-safe-zones switch. Explosions originating outside can still deal splash damage across a border. Collisions, warheads and custom weapon systems such as WeaponCore are outside these two rules.
+
+Players get a HUD warning within 2 km of an active border. It names the region, gives the distance and lists the shooting restrictions. Crossing into the region gives an entry notice. Moving at least 10 m back outside gives an exit notice. The approach warning re-arms at 2.2 km. Each overlapping region tracks its own notices.
+
+The updated Magnetar companion draws a local patch on each of the four closest active borders. In Quasar, open **Essentials → General → Combat regions** to set `RegionBarrierDistanceKm`. The default is **50 km** from the closest point on the surface, inside or outside. Set it to any whole number from 0 to 500 km. Zero hides all barriers while keeping the HUD notices and combat rules active. Changes take effect during play.
+
+Use `!ess region skin "Trade Harbor" Hexagon 750` for a larger pattern or `!ess region skin "Trade Harbor" Grid` to restore the original cyan lattice. The scale sets the width of one texture repeat in metres on a flat face. Sphere faces curve around the zone. Names are case-insensitive. The stock choices are `Default`, `Aura`, `Organic`, `Rain`, `Dots`, `Disco`, `Noise`, `Hexagon`, `Lines`, `Digital`, `Gloura`, `Clang`, `Voronoi`, `Restricted`, `KeenSWH` and `Disabled`. The last name selects the game's disabled-zone texture. Setting the region's **rules** to `none` suspends its restrictions and indicators. Existing regions use `Grid` at 500 m. Both `list` and `inspect` show the saved appearance. Ships and players can cross the surface.
+
+Definitions are saved immediately in `Storage/Essentials/Regions.xml` under the active world. A new world inherits its template's regions. An existing named save keeps its own definitions when the server opens the template again. Back up this file with the world. If the file is unreadable or invalid, Essentials logs an error, refuses edits and blocks vanilla firing while enabled. Restore the file and reload the world to recover. Cluster processes leave this standalone feature inactive.
+
 ## Safe zones, GPS & economy stations
 
 | Command                                             | Permission | Description                                                                                                                      |

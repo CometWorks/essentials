@@ -86,6 +86,7 @@ public class Plugin : IPlugin, ICommonPlugin
         AutoCommands = new AutoCommandExecutor(config.Data, Log);
         cleanupLookNotifications = new CleanupLookNotifications(config.Data);
         ServerControl.Terminating += OnTerminating;
+        Sandbox.Game.World.MySession.OnUnloading += Regions.RegionRuntime.Reset;
 
         if (!PatchHelpers.HarmonyPatchAll(Log, new Harmony(Name)))
         {
@@ -101,6 +102,8 @@ public class Plugin : IPlugin, ICommonPlugin
         try
         {
             ServerControl.Terminating -= OnTerminating;
+            Sandbox.Game.World.MySession.OnUnloading -= Regions.RegionRuntime.Reset;
+            Regions.RegionRuntime.Reset();
             ShipFixer.ShipFixerCluster.Dispose();
             ClusterCommands.Dispose();
             // IMPORTANT: Do NOT call harmony.UnpatchAll() here! It may break other plugins.
@@ -147,6 +150,7 @@ public class Plugin : IPlugin, ICommonPlugin
         PatchHelpers.PatchUpdates();
         AutoCommands?.Update();
         cleanupLookNotifications?.Update();
+        Regions.RegionIndicators.Update(Tick);
         ShipFixer.ShipFixerCluster.Update(Tick);
         ClusterCommands.Update(Tick);
     }

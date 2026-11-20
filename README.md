@@ -15,6 +15,9 @@ common quality-of-life server behaviour, configured through the Magnetar
 - **Ship fixer** — cut/paste a grid to clear physics issues, with cooldowns.
 - **Voxel deformation controls** — independent switches for missile, meteor and
   grid collision voxel cutouts.
+- **Combat regions** — standalone admins can protect large spheres and boxes from
+  firing and incoming vanilla ammunition. Players receive proximity and crossing notices.
+  The updated Magnetar companion mod draws nearby borders with configurable safe-zone skins, pattern size and visibility distance. See the [region commands](Docs/Commands.md#combat-regions).
 - **Blocks, economy, PCU/ownership transfer, Stone cleanup, grid conversion,
   safezone, GPS and station maintenance** utilities.
 
@@ -23,7 +26,7 @@ See [Docs/](Docs/README.md) for the full documentation and the
 
 ## Command Coverage
 
-Essentials currently exposes **160** `!ess` chat commands plus the legacy
+Essentials currently exposes **170** `!ess` chat commands plus the legacy
 top-level `!stone` command and the short forms `!fixship`, `!fixshipmod`,
 `!fixshipmodid` and `!reload`. The complete command reference lives in
 [Docs/Commands.md](Docs/Commands.md); the main groups are:
@@ -135,6 +138,9 @@ Player B has no rights and shares a faction with player C, who never joins. The 
 type the chat commands, read what each client gets back (replies, broadcasts, HUD
 notifications) and check the result on the server: grids, blocks, inventories, balances,
 voxels, identities, factions, and the files the plugin writes. It runs on Linux only.
+
+The region geometry, proximity and world-save tests can also run without a game session:
+`dotnet test tests/regions/Regions.Tests.csproj` uses the same Dedicated Server assembly path as the plugin build.
 
 What it covers:
 

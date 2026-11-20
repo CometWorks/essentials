@@ -12,6 +12,7 @@ namespace Shared.Config;
 [Tab("homes", caption: "Homes")]
 [Tab("info", caption: "Info Commands")]
 [Section("core", "general", "Core")]
+[Section("regions", "general", "Combat regions")]
 [Section("grid", "general", "Grid Utilities")]
 [Section("voxels", "general", "Voxel Deformation")]
 [Section("motd-main", "motd", "Messages")]
@@ -32,6 +33,18 @@ public class PluginConfig : PluginSdk.Config.PluginConfig, IPluginConfig
         get;
         set => SetField(ref field, value);
     } = true;
+
+    [IntOption(
+        0,
+        500,
+        "Maximum barrier visibility from either side of a region border in kilometres (0 hides barriers).",
+        Parent = "regions"
+    )]
+    public int RegionBarrierDistanceKm
+    {
+        get;
+        set => SetField(ref field, System.Math.Max(0, System.Math.Min(500, value)));
+    } = 50;
 
     [BoolOption("Cut mods and block limits from matchmaking server info.", Parent = "core")]
     public bool CutGameTags

@@ -202,3 +202,26 @@ def test_fixallstations(game):
     assert result == "Deleted 1 duplicate station grid(s)."
     assert game.exists(original) and game.exists(far)
     assert not game.exists(duplicate)
+
+
+def test_combat_regions_overlap_and_edit(game):
+    sphere = "Harbor suite sphere"
+    box = "Harbor suite box"
+    point = "GPS:center:1000000:1000000:1000000:"
+    edge = "GPS:edge:1250000:1000000:1000000:"
+    beyond = "GPS:beyond:1250001:1000000:1000000:"
+    command = game.a.ess
+    try:
+        reply = command(f'region sphere "{sphere}" 250 incoming {point}')
+        assert reply == f"Created region '{sphere}'."
+        corners = "GPS:one:999999:999999:999999: GPS:two:1000001:1000001:1000001:"
+        assert command(f'region box "{box}" {corners} firing') == f"Created region '{box}'."
+        both = command(f"region inspect {point}")
+        assert f"{sphere} [Incoming]" in both and f"{box} [Firing]" in both
+        assert f"{sphere} [Incoming]" in command(f"region inspect {edge}")
+        assert command(f"region inspect {beyond}") == "No matching regions."
+        assert command(f'region rules "{box}" none') == f"Updated region '{box}'."
+        assert f"{box} [None]" in command("region list")
+    finally:
+        command(f'region delete "{sphere}"')
+        command(f'region delete "{box}"')
