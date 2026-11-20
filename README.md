@@ -4,6 +4,8 @@ Essentials is a Space Engineers dedicated server plugin for Magnetar. It bundles
 common quality-of-life server behaviour, configured through the Magnetar
 `PluginSdk` with the UI rendered by Quasar from the generated schema.
 
+Version 1.1.3 and later need Space Engineers 1.211.018 or later.
+
 ## Features
 
 - **Auto commands** — timed, scheduled and triggered server command sequences:
