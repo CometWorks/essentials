@@ -69,12 +69,13 @@ internal static class RegionRuntime
 
     public static void Reset()
     {
+        RegionIndicators.Reset();
         store = null;
         loadFailed = false;
     }
 
     // Queries read an immutable snapshot without I/O or entity scans.
-    private static CombatRegion[] Active =>
+    internal static CombatRegion[] Active =>
         Plugin.Instance?.PluginConfig?.Enabled == true ? Store?.Snapshot : null;
     private static bool BlockOnLoadError =>
         loadFailed && Plugin.Instance?.PluginConfig?.Enabled == true;

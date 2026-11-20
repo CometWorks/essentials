@@ -16,7 +16,8 @@ common quality-of-life server behaviour, configured through the Magnetar
 - **Voxel deformation controls** — independent switches for missile, meteor and
   grid collision voxel cutouts.
 - **Combat regions** — standalone admins can protect large spheres and boxes from
-  firing and incoming vanilla ammunition. See the [region commands](Docs/Commands.md#combat-regions).
+  firing and incoming vanilla ammunition. Players receive proximity and crossing notices.
+  The updated Magnetar companion mod also draws the nearby boundary. See the [region commands](Docs/Commands.md#combat-regions).
 - **Blocks, economy, PCU/ownership transfer, Stone cleanup, grid conversion,
   safezone, GPS and station maintenance** utilities.
 
@@ -138,7 +139,7 @@ type the chat commands, read what each client gets back (replies, broadcasts, HU
 notifications) and check the result on the server: grids, blocks, inventories, balances,
 voxels, identities, factions, and the files the plugin writes. It runs on Linux only.
 
-The region geometry and world-save tests can also run without a game session:
+The region geometry, proximity and world-save tests can also run without a game session:
 `dotnet test tests/regions/Regions.Tests.csproj` uses the same Dedicated Server assembly path as the plugin build.
 
 What it covers:

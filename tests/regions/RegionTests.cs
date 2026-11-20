@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using ServerPlugin.Regions;
 using VRageMath;
 using Xunit;
@@ -75,6 +77,93 @@ public class RegionTests
         Assert.False(
             box.Entry(new Vector3D(-2, 1.00000001, 0), new Vector3D(2, 1.00000002, 0)).HasValue
         );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void DistanceAndNoticesFollowTheBorder(bool sphere)
+    {
+        var region = Region(sphere);
+        var edge = Center + Vector3D.UnitX * Size;
+        Assert.Equal(-Size, region.BoundaryDistance(Center));
+        Assert.Equal(0, region.BoundaryDistance(edge));
+        if (!sphere)
+            Assert.Equal(5, region.BoundaryDistance(Center + Size + new Vector3D(0, 3, 4)));
+        var observer = new RegionProximity();
+        var notices = new List<string>();
+        var snapshot = new[] { region };
+        void Visit(double distance) =>
+            observer.Sample(snapshot, edge + Vector3D.UnitX * distance, notices.Add);
+
+        Visit(4000);
+        Assert.Empty(observer.Nearby);
+        Visit(1990);
+        Visit(2010);
+        Visit(1990);
+        Assert.Same(region, Assert.Single(observer.Nearby));
+        Visit(0);
+        Visit(3);
+        Visit(-5);
+        Visit(20);
+        Visit(2400);
+        Visit(1900);
+        Assert.Equal(4, notices.Count);
+        Assert.StartsWith("Near Harbor", notices[0]);
+        Assert.Contains("Firing and incoming fire blocked", notices[0]);
+        Assert.StartsWith("Entered Harbor", notices[1]);
+        Assert.Equal("Left Harbor", notices[2]);
+        Assert.StartsWith("Near Harbor", notices[3]);
+    }
+
+    [Fact]
+    public void ActiveRulesAndNearestSurfacesStayCurrentWhenRegionsOverlapOrChange()
+    {
+        var observer = new RegionProximity();
+        var notices = new List<string>();
+        var regions = Enumerable
+            .Range(1, 6)
+            .Select(i => new CombatRegion($"Port {i}", RegionRules.Firing, Center, Center, i * 100))
+            .Reverse()
+            .ToArray();
+        observer.Sample(regions, Center, notices.Add);
+        Assert.Equal(4, notices.Count);
+        Assert.Equal("+3 more region notices", notices.Last());
+        Assert.Equal(new[] { 100d, 200, 300, 400 }, observer.Nearby.Select(r => r.Radius.Value));
+        observer.Sample(new[] { regions[0].WithRules(RegionRules.None) }, Center, notices.Add);
+        Assert.Empty(observer.Nearby);
+        Assert.Equal(4, notices.Count);
+        observer.Sample(new[] { regions[0].WithRules(RegionRules.Incoming) }, Center, notices.Add);
+        Assert.Contains("Incoming fire blocked", notices.Last());
+        observer.Sample(Array.Empty<CombatRegion>(), Center, notices.Add);
+        Assert.Empty(observer.Nearby);
+    }
+
+    [Fact]
+    public void CompanionSnapshotUsesWorldMetresAndAnExplicitEmptyList()
+    {
+        var packet = RegionProximity.Encode(new[] { Region(true), Region(false) });
+        Assert.Equal(114, packet.Length);
+        using var reader = new BinaryReader(new MemoryStream(packet));
+        Assert.Equal(1, reader.ReadByte());
+        Assert.Equal(2, reader.ReadByte());
+        foreach (var shape in new[] { Region(true), Region(false) })
+        {
+            foreach (
+                var expected in new[]
+                {
+                    shape.First.X,
+                    shape.First.Y,
+                    shape.First.Z,
+                    shape.Second.X,
+                    shape.Second.Y,
+                    shape.Second.Z,
+                    shape.Radius ?? 0,
+                }
+            )
+                Assert.Equal(expected, reader.ReadDouble());
+        }
+        Assert.Equal(new byte[] { 1, 0 }, RegionProximity.Encode(Array.Empty<CombatRegion>()));
     }
 
     [Fact]

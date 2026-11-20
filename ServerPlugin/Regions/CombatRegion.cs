@@ -66,6 +66,16 @@ internal sealed class CombatRegion
             ? Vector3D.DistanceSquared(point, First) <= radius * radius
             : new BoundingBoxD(First, Second).Contains(point) != ContainmentType.Disjoint;
 
+    // Negative inside, zero on the border, positive outside (including box corners).
+    public double BoundaryDistance(Vector3D point)
+    {
+        if (Radius is double radius)
+            return Vector3D.Distance(point, First) - radius;
+        var outside = Vector3D.Max(First - point, point - Second);
+        double largest = Math.Max(outside.X, Math.Max(outside.Y, outside.Z));
+        return largest <= 0 ? largest : Vector3D.Max(outside, Vector3D.Zero).Length();
+    }
+
     public bool Intersects(BoundingBoxD bounds) =>
         Radius is double radius
             ? Vector3D.DistanceSquared(First, Vector3D.Clamp(First, bounds.Min, bounds.Max))

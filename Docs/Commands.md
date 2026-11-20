@@ -273,7 +273,11 @@ On a standalone Magnetar server, an admin can create a named sphere or an axis-a
 | `peace` | Applies both restrictions. |
 | `none` | Keeps the shape and suspends its rules. |
 
-Restrictions from overlapping regions combine. Ordinary game and safe-zone restrictions still apply. Region rules also cover admins using the vanilla ignore-safe-zones switch. A region has no visible in-game shield. Explosions originating outside can still deal splash damage across a border. Collisions, warheads and custom weapon systems such as WeaponCore are outside these two rules.
+Restrictions from overlapping regions combine. Ordinary game and safe-zone restrictions still apply. Region rules also cover admins using the vanilla ignore-safe-zones switch. Explosions originating outside can still deal splash damage across a border. Collisions, warheads and custom weapon systems such as WeaponCore are outside these two rules.
+
+Players get a HUD warning within 2 km of an active border. It names the region, gives the distance and lists the shooting restrictions. Crossing into the region gives an entry notice. Moving at least 10 m back outside gives an exit notice. The approach warning re-arms at 2.2 km. Each overlapping region tracks its own notices.
+
+With the updated Magnetar companion mod loaded, a translucent cyan grid marks the boundary from either side. It appears locally as you approach, including in the middle of a large box face. At most the four nearest borders are drawn. Ships and players can cross the grid. The HUD warnings and server rules work independently of the companion. Setting a region to `none` hides its grid and silences its notices.
 
 Definitions are saved immediately in `Storage/Essentials/Regions.xml` under the active world. A new world inherits its template's regions. An existing named save keeps its own definitions when the server opens the template again. Back up this file with the world. If the file is unreadable or invalid, Essentials logs an error, refuses edits and blocks vanilla firing while enabled. Restore the file and reload the world to recover. Cluster processes leave this standalone feature inactive.
 

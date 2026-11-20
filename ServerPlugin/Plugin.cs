@@ -150,6 +150,7 @@ public class Plugin : IPlugin, ICommonPlugin
         PatchHelpers.PatchUpdates();
         AutoCommands?.Update();
         cleanupLookNotifications?.Update();
+        Regions.RegionIndicators.Update(Tick);
         ShipFixer.ShipFixerCluster.Update(Tick);
         ClusterCommands.Update(Tick);
     }
