@@ -346,6 +346,10 @@ confirmation window, projector handling, ejecting players) is governed by the
 **Ship Fixer** config tab; the player `!ess fixship` command (and `!fixship`)
 can be disabled there. Each command also has the short form without `!ess`.
 
+A station's active safe zone protects it as soon as the paste finishes. A zone
+partway through warm-up resumes with the time it had left. A disabled zone stays
+disabled. The generator keeps its settings and paid zone-chip time.
+
 On a Magnetar cluster a node cuts and pastes only grids it owns and simulates. A
 grid named (or given by id) that is on another node is found there: every node is
 asked, the one holding the grid answers the confirmation and does the fix, and the

@@ -219,3 +219,70 @@ def test_fixshipmodid(game):
     fixed(game, g)
     assert game.a.ess("fixshipmodid 0") == "Correct Usage is !ess fixshipmodid EntityID"
     assert game.a.ess("fixshipmodid 12345") == "Grid not found"
+
+
+@pytest.mark.parametrize("parallel", [False, True])
+@pytest.mark.parametrize("state", ["active", "warming", "zone_off", "block_off"])
+def test_fixship_preserves_safe_zone(game, state, parallel):
+    game.configure(ShipFixerInParallel=parallel)
+    station = prefabs.Grid(
+        "Station", (200, 0, -100), slab=(6, 1, 4), owner=world.PLAYER_B
+    )
+    station.add("battery", (3, 1, 0))
+    has_zone = state in ("active", "warming")
+    warming = state == "warming"
+    # The zone lives in the world separately from its generator, as in a save.
+    zone_id = 0
+    if has_zone:
+        reply = game.a.probe(
+            "safezone",
+            *station.world_of((0, 1, 0)),
+            37,
+            station.blocks["battery"] + 1,
+            str(not warming).lower(),
+            station.entity_id,
+        )
+        zone_id = int(reply.split(": ")[1])
+    station.add(
+        "safezone",
+        (0, 1, 0),
+        extra=f"""
+        <Enabled>{str(state != "block_off").lower()}</Enabled><SafeZoneId>{zone_id}</SafeZoneId>
+        <ComponentContainer><Components><ComponentData><TypeId>MySafeZoneComponent</TypeId>
+        <Component xsi:type="MyObjectBuilder_SafeZoneComponent">
+        <UpkeepTime>60000</UpkeepTime>
+        <SafeZoneOb xsi:type="MyObjectBuilder_SafeZone"><Radius>37</Radius>
+        <Entities><long>{station.entity_id}</long></Entities></SafeZoneOb>
+        <Activating>{str(warming).lower()}</Activating><ActivationTime>12000</ActivationTime>
+        </Component></ComponentData></Components></ComponentContainer>""",
+    )
+    game.spawn(station)
+    assert PROMPT.fullmatch(game.b.command("!fixship Station"))
+    before = parse(game.a.probe("blockzone", station.entity_id))
+    assert game.b.command("!fixship Station") == "Ship was fixed!"
+    new_id = fixed(game, station, blocks=26)
+    after = parse(game.a.probe("blockzone", new_id))
+    for snapshot in (before, after):
+        assert snapshot["blockEnabled"] == str(state != "block_off")
+        assert snapshot["cachedListed"] == "True"
+        assert snapshot["linked"] == str(has_zone)
+        assert snapshot["enabled"] == str(state == "active")
+        assert snapshot["protected"] == str(state == "active")
+        assert snapshot["warming"] == str(warming)
+        assert snapshot["listed"] == str(has_zone)
+        assert snapshot["radius"] == ("37" if has_zone else "0")
+    assert before["credit"] == after["credit"]
+    if has_zone:
+        assert int(after["id"]) != zone_id
+        assert game.a.probe("zoneinfo", zone_id) == "Probe zoneinfo: none"
+        assert abs(float(after["upkeep"]) - float(before["upkeep"])) < 3000
+    else:
+        assert after["id"] == "0"
+    if warming:
+        assert 0 < int(after["remaining"]) <= int(before["remaining"])
+        assert int(before["remaining"]) - int(after["remaining"]) < 3000
+        wait_until(
+            lambda: parse(game.a.probe("blockzone", new_id))["protected"] == "True",
+            15,
+            "restored warm-up to finish",
+        )

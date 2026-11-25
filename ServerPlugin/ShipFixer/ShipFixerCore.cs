@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ObjectBuilders.SafeZone;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
@@ -11,7 +12,6 @@ using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Groups;
 using VRage.ModAPI;
-using VRage.ObjectBuilders;
 using VRageMath;
 using IMyShipController = Sandbox.ModAPI.IMyShipController;
 using IMyTerminalBlock = Sandbox.ModAPI.Ingame.IMyTerminalBlock;
@@ -352,7 +352,8 @@ public sealed class ShipFixerCore
     private static ShipFixerResult FixGroup(List<MyCubeGrid> grids, MyIdentity executingPlayer)
     {
         string playerName = executingPlayer?.DisplayName ?? "Server";
-        List<MyObjectBuilder_EntityBase> objectBuilders = new List<MyObjectBuilder_EntityBase>();
+        var objectBuilders = new List<MyObjectBuilder_CubeGrid>();
+        var safeZones = new ShipFixerSafeZones();
         List<MyCubeGrid> gridsToClose = new List<MyCubeGrid>();
 
         foreach (MyCubeGrid grid in grids)
@@ -360,24 +361,24 @@ public sealed class ShipFixerCore
             gridsToClose.Add(grid);
             grid.Physics?.ClearSpeed();
 
-            MyObjectBuilder_EntityBase objectBuilder = grid.GetObjectBuilder(true);
-            if (objectBuilder is MyObjectBuilder_CubeGrid gridBuilder)
+            var gridBuilder = (MyObjectBuilder_CubeGrid)grid.GetObjectBuilder(true);
+            foreach (MyObjectBuilder_CubeBlock cubeBlock in gridBuilder.CubeBlocks)
             {
-                foreach (MyObjectBuilder_CubeBlock cubeBlock in gridBuilder.CubeBlocks)
+                if (cubeBlock is MyObjectBuilder_ProjectorBase projector)
                 {
-                    if (cubeBlock is MyObjectBuilder_ProjectorBase projector)
-                    {
-                        projector.Enabled = false;
-                        if (Plugin.Instance.Config.ShipFixerRemoveBlueprintsFromProjectors)
-                            projector.ProjectedGrids = null;
-                    }
-
-                    if (cubeBlock is MyObjectBuilder_OxygenTank oxygenTank)
-                        oxygenTank.AutoRefill = false;
+                    projector.Enabled = false;
+                    if (Plugin.Instance.Config.ShipFixerRemoveBlueprintsFromProjectors)
+                        projector.ProjectedGrids = null;
                 }
+
+                if (cubeBlock is MyObjectBuilder_SafeZoneBlock zoneBlock)
+                    safeZones.Capture(grid, zoneBlock);
+
+                if (cubeBlock is MyObjectBuilder_OxygenTank oxygenTank)
+                    oxygenTank.AutoRefill = false;
             }
 
-            objectBuilders.Add(objectBuilder);
+            objectBuilders.Add(gridBuilder);
         }
 
         foreach (MyCubeGrid grid in gridsToClose)
@@ -388,7 +389,7 @@ public sealed class ShipFixerCore
             grid.Close();
         }
 
-        SpawnObjectBuilders(objectBuilders, Plugin.Instance.Config.ShipFixerInParallel);
+        SpawnObjectBuilders(objectBuilders, safeZones, Plugin.Instance.Config.ShipFixerInParallel);
         return ShipFixerResult.ShipFixed;
     }
 
@@ -408,34 +409,27 @@ public sealed class ShipFixerCore
     }
 
     private static void SpawnObjectBuilders(
-        List<MyObjectBuilder_EntityBase> objectBuilders,
+        List<MyObjectBuilder_CubeGrid> objectBuilders,
+        ShipFixerSafeZones safeZones,
         bool parallel
     )
     {
-        MyAPIGateway.Entities.RemapObjectBuilderCollection(objectBuilders);
-
-        if (parallel)
+        safeZones.Remap(objectBuilders);
+        foreach (var builder in objectBuilders)
         {
-            foreach (MyObjectBuilder_EntityBase objectBuilder in objectBuilders)
-                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(
-                    objectBuilder,
-                    true,
-                    OnEntitySpawned
-                );
+            void OnSpawned(IMyEntity entity)
+            {
+                if (entity is MyCubeGrid grid)
+                {
+                    safeZones.Restore(builder, grid);
+                    grid.DetectDisconnectsAfterFrame();
+                }
+            }
 
-            return;
+            if (parallel)
+                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(builder, true, OnSpawned);
+            else
+                OnSpawned(MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(builder));
         }
-
-        foreach (MyObjectBuilder_EntityBase objectBuilder in objectBuilders)
-        {
-            IMyEntity entity = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(objectBuilder);
-            OnEntitySpawned(entity);
-        }
-    }
-
-    private static void OnEntitySpawned(IMyEntity entity)
-    {
-        if (entity is MyCubeGrid grid)
-            grid.DetectDisconnectsAfterFrame();
     }
 }
