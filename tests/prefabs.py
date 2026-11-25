@@ -16,6 +16,7 @@ from world import PLAYER_A, block
 # Functional blocks: kind -> (object builder type, subtype, extra XML)
 KINDS = {
     "reactor": ("Reactor", "LargeBlockSmallGenerator", "<Enabled>true</Enabled>"),
+    "safezone": ("SafeZoneBlock", "SafeZoneBlock", ""),
     "battery": (
         "BatteryBlock",
         "LargeBlockBatteryBlock",

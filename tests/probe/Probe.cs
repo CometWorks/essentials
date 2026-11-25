@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;
+using ObjectBuilders.SafeZone;
 using PluginSdk.Commands;
 using Sandbox;
 using Sandbox.Common.ObjectBuilders;
@@ -19,11 +20,15 @@ using Sandbox.Game.GameSystems.BankingAndCurrency;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
+using SpaceEngineers.Game.Entities.Blocks.SafeZone;
+using SpaceEngineers.Game.EntityComponents.Blocks;
 using VRage;
 using VRage.FileSystem;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Components;
+using VRage.Game.ObjectBuilders.Components.Beacon;
 using VRage.ModAPI;
 using VRage.ObjectBuilders;
 using VRage.ObjectBuilders.Private;
@@ -873,9 +878,17 @@ public sealed class ProbeCommands : CommandModule
 
     // --- safe zones and stations ----------------------------------------------------
 
-    [Command("safezone", "Makes an enabled spherical safe zone.")]
+    [Command("safezone", "Makes a spherical safe zone.")]
     [Permission(MyPromoteLevel.Admin)]
-    public string SafeZone(double x, double y, double z, float radius)
+    public string SafeZone(
+        double x,
+        double y,
+        double z,
+        float radius,
+        long blockId = 0,
+        bool enabled = true,
+        long listedGrid = 0
+    )
     {
         MyEntity zone = MySessionComponentSafeZones.CrateSafeZone(
             MatrixD.CreateWorld(new Vector3D(x, y, z)),
@@ -884,9 +897,40 @@ public sealed class ProbeCommands : CommandModule
             null,
             null,
             radius,
-            true
+            enabled,
+            safeZoneBlockId: blockId
         );
+        if (listedGrid != 0)
+            ((MySafeZone)zone).Entities.Add(listedGrid);
         return Ok("safezone", zone.EntityId.ToString(CultureInfo.InvariantCulture));
+    }
+
+    [Command("blockzone", "Reads a generator and its zone on the server.")]
+    [Permission(MyPromoteLevel.Admin)]
+    public string BlockZone(long gridId)
+    {
+        var grid = (MyCubeGrid)MyEntities.GetEntityById(gridId);
+        var block = grid.GetFatBlocks().OfType<MySafeZoneBlock>().Single();
+        var builder = (MyObjectBuilder_SafeZoneBlock)block.GetObjectBuilderCubeBlock();
+        var timer = builder
+            .ComponentContainer.Components.Select(c => c.Component)
+            .OfType<MyObjectBuilder_SafeZoneComponent>()
+            .Single();
+        MyEntities.TryGetEntityById(builder.SafeZoneId, out MySafeZone zone, false);
+        var saved = (MyObjectBuilder_SafeZone)zone?.GetObjectBuilder();
+        var cached = (MyObjectBuilder_SafeZone)timer.SafeZoneOb;
+        bool protectedFromDamage = !MySessionComponentSafeZones.IsActionAllowed(
+            block.PositionComp.GetPosition(),
+            MySafeZoneAction.Damage
+        );
+        var pausedCredit = (TimeSpan)Get(block.Components.Get<MySafeZoneComponent>(), "m_timeLeft");
+        return Ok(
+            "blockzone",
+            $"protected={protectedFromDamage} blockEnabled={block.Enabled} cachedListed={cached?.Entities.Contains(gridId) == true} "
+                + $"linked={saved?.SafeZoneBlockId == block.EntityId} enabled={saved?.Enabled == true} "
+                + $"warming={timer.Activating} remaining={timer.ActivationTime} upkeep={F(timer.UpkeepTime)} "
+                + $"listed={saved?.Entities.Contains(gridId) == true} credit={pausedCredit.Ticks} id={builder.SafeZoneId} radius={saved?.Radius ?? 0}"
+        );
     }
 
     [Command("zoneinfo", "A safe zone's listed players and factions.")]
